@@ -1,0 +1,70 @@
+---
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
+import "../styles/global.css";
+import { settings, previewNotes, waLink } from "../lib/shop";
+
+interface Props {
+  title?: string;
+  description?: string;
+  nav?: "home" | "track" | "sizes" | "";
+}
+const { title, description = "Pre-loved shoes in Pakistan. Real photos, honest condition, cash on delivery with TCS.", nav = "" } = Astro.props;
+const fullTitle = title ? `${title} | ${settings.brand}` : `${settings.brand}: pre-loved shoes, cash on delivery`;
+const notes = previewNotes();
+const wa = waLink("Hi Anchor Shoes, I have a question.");
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#17223B" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    {notes.length > 0 && <div class="preview">Preview build: {notes.join(" · ")}</div>}
+    <div class="strip">{settings.deliveryNote}</div>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="logo" href="/" aria-label={`${settings.brand}, home`}>
+          <img src="/brand/logo-header.svg" alt={settings.brand} width="190" height="38" />
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a class="hide-sm" href="/size-guide/" aria-current={nav === "sizes" ? "page" : undefined}>Size guide</a>
+          <a href="/track/" aria-current={nav === "track" ? "page" : undefined}>Track order</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <img src="/brand/logo-header-reversed.svg" alt={settings.brand} width="210" height="40" />
+        <p>Pre-loved shoes, photographed as they are. We call to confirm every order, then ship by TCS with cash on delivery.</p>
+        <ul class="foot-links">
+          <li><a href="/">Shop</a></li>
+          <li><a href="/size-guide/">Size guide</a></li>
+          <li><a href="/track/">Track order</a></li>
+          {wa && <li><a href={wa} rel="noopener">WhatsApp</a></li>}
+          {settings.phone && <li><a href={`tel:${settings.phone}`}>Call {settings.phone}</a></li>}
+        </ul>
+        <div class="copy">© {new Date().getFullYear()} {settings.brand}</div>
+      </div>
+    </footer>
+  </body>
+</html>

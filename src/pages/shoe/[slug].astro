@@ -1,0 +1,68 @@
+---
+import Base from "../../layouts/Base.astro";
+import ProductCard from "../../components/ProductCard.astro";
+import { allProducts, rs, sizeLine, waLink, type Product } from "../../lib/shop";
+import { fullSize, fmt } from "../../lib/sizes";
+
+export function getStaticPaths() {
+  return allProducts.map((p) => ({ params: { slug: p.slug }, props: { p } }));
+}
+
+const { p } = Astro.props as { p: Product };
+const s = fullSize(p.size);
+const wa = waLink(`Hi Anchor Shoes, I want to order: ${p.name}, EU ${s.eu}, ${rs(p.price)}.`);
+const others = allProducts.filter((o) => o.slug !== p.slug && o.status === "available").slice(0, 4);
+const sold = p.status === "sold";
+---
+
+<Base title={p.name} description={`${p.name}, ${p.colour}. ${sizeLine(p)}, condition ${p.condition}/10, ${rs(p.price)}. Cash on delivery.`}>
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="/">Shop</a> / {p.name}</nav>
+
+    <article class="pdp">
+      <div class="pdp-img">
+        <img src={p.photos[0]} alt={`${p.name}, ${p.colour}`} width="640" height="800" />
+        {sold && <span class="tag">Sold</span>}
+      </div>
+
+      <div>
+        <h1>{p.name}</h1>
+        <p class="sub">{p.colour}</p>
+        <p class="big-price">{rs(p.price)}</p>
+        <p class="small">Cash on delivery. Delivery fee is shown when we confirm your order.</p>
+
+        <div class="facts">
+          <div class="fact"><b>{s.eu}</b><span>EU size</span></div>
+          <div class="fact"><b>{fmt(s.uk)}</b><span>UK size</span></div>
+          <div class="fact"><b>{p.condition}/10</b><span>Condition</span></div>
+        </div>
+
+        {p.flaws && <div class="note"><b>Please note:</b> {p.flaws}</div>}
+        <p class="small">Foot length about {fmt(s.cm)} cm. <a href="/size-guide/">Size guide</a></p>
+
+        {sold ? (
+          <div class="note"><b>This pair is sold.</b> <a href="/">See other pairs</a></div>
+        ) : (
+          <div class="cta">
+            <a class="btn block" href={wa || "#"} rel="noopener" aria-disabled={wa ? undefined : "true"}>Order on WhatsApp</a>
+            <a class="btn ghost block" href="/track/">Track an order</a>
+          </div>
+        )}
+
+        <ul class="list">
+          <li>This is a one-off pair. Once it is sold it is gone.</li>
+          <li>The photos show the actual pair.</li>
+          <li>We call or message you to confirm before we ship.</li>
+          <li>Delivered by TCS. You pay when it arrives.</li>
+        </ul>
+      </div>
+    </article>
+
+    {others.length > 0 && (
+      <section class="section" aria-labelledby="more-h">
+        <h2 id="more-h">More pairs</h2>
+        <ul class="grid">{others.map((o) => <ProductCard p={o} />)}</ul>
+      </section>
+    )}
+  </div>
+</Base>

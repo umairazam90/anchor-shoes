@@ -1,0 +1,29 @@
+---
+import Base from "../layouts/Base.astro";
+import { SIZE_CHART } from "../lib/sizes";
+---
+
+<Base title="Size guide" nav="sizes" description="EU, UK and US shoe size chart with foot length in cm, and how to measure your foot.">
+  <div class="wrap prose">
+    <h1>Size guide</h1>
+    <p>Men's sizes. Fit changes from brand to brand, so every pair also lists its own size. If you are between two sizes, message us and we will help you choose.</p>
+
+    <div class="table-wrap" style="margin-top:16px">
+      <table>
+        <thead><tr><th>EU</th><th>UK</th><th>US</th><th>Foot (cm)</th></tr></thead>
+        <tbody>
+          {SIZE_CHART.map((r) => <tr><td>{r.eu}</td><td>{r.uk}</td><td>{r.us}</td><td>{r.cm}</td></tr>)}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section" style="padding-top:28px">
+      <h2>How to measure your foot</h2>
+      <ol class="steps">
+        <li><b>Stand on paper</b><span>Put a sheet of paper against a wall and stand on it with your heel touching the wall.</span></li>
+        <li><b>Mark your longest toe</b><span>Make a small mark in front of your longest toe.</span></li>
+        <li><b>Measure in cm</b><span>Measure from the wall to the mark and find the closest row above.</span></li>
+      </ol>
+    </div>
+  </div>
+</Base>

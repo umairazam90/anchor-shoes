@@ -1,0 +1,75 @@
+---
+import Base from "../layouts/Base.astro";
+import { settings } from "../lib/shop";
+---
+
+<Base title="Track your order" nav="track" description="Track your Anchor Shoes order on the TCS website.">
+  <div class="wrap prose" data-track data-tcs={settings.tcsTrackUrl}>
+    <h1>Track your order</h1>
+    <p>We send your TCS tracking number by message. Tracking itself happens on the TCS website, so you always see their latest update.</p>
+
+    <!-- shown when the link carries a number: /track/?n=1234567890 -->
+    <div class="panel" data-result hidden>
+      <p class="small" style="margin:0">Your TCS tracking number</p>
+      <p class="big-num" data-number></p>
+      <div class="cta">
+        <a class="btn block" data-open href={settings.tcsTrackUrl} target="_blank" rel="noopener">Open TCS tracking</a>
+        <button class="btn ghost block" type="button" data-copy>Copy number</button>
+      </div>
+      <p class="small" data-hint>On the TCS page, paste the number and press track.</p>
+    </div>
+
+    <!-- shown when you open the page without a number -->
+    <form class="panel" data-form novalidate>
+      <label for="tn">TCS tracking number</label>
+      <input id="tn" name="tn" inputmode="numeric" autocomplete="off" placeholder="For example 1234567890" maxlength="30" />
+      <p class="small" data-error role="alert" style="color:#8a2c1f;margin:6px 0 0" hidden>Please enter the tracking number we sent you.</p>
+      <div class="cta">
+        <button class="btn block" type="submit">Show tracking</button>
+      </div>
+    </form>
+
+    <p class="small">Cannot find your number? Message us on WhatsApp with your name and phone number.</p>
+  </div>
+</Base>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-track]")!;
+  const result = root.querySelector<HTMLElement>("[data-result]")!;
+  const form = root.querySelector<HTMLFormElement>("[data-form]")!;
+  const numEl = root.querySelector<HTMLElement>("[data-number]")!;
+  const copyBtn = root.querySelector<HTMLButtonElement>("[data-copy]")!;
+  const hint = root.querySelector<HTMLElement>("[data-hint]")!;
+  const err = root.querySelector<HTMLElement>("[data-error]")!;
+  const input = root.querySelector<HTMLInputElement>("#tn")!;
+
+  const clean = (v: string | null) => (v ?? "").replace(/[^A-Za-z0-9-]/g, "").slice(0, 30);
+
+  function show(n: string) {
+    numEl.textContent = n;
+    result.hidden = false;
+    form.hidden = true;
+    history.replaceState(null, "", "?n=" + encodeURIComponent(n));
+  }
+
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(numEl.textContent ?? "");
+      copyBtn.textContent = "Copied";
+    } catch {
+      copyBtn.textContent = "Select and copy the number above";
+    }
+    setTimeout(() => (copyBtn.textContent = "Copy number"), 2500);
+  });
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const n = clean(input.value);
+    err.hidden = n.length >= 6;
+    if (n.length >= 6) show(n);
+  });
+
+  const fromLink = clean(new URLSearchParams(location.search).get("n"));
+  if (fromLink) show(fromLink);
+  void hint;
+</script>

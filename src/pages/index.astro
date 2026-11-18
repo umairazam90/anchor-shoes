@@ -1,0 +1,72 @@
+---
+import Base from "../layouts/Base.astro";
+import ProductCard from "../components/ProductCard.astro";
+import { allProducts } from "../lib/shop";
+
+const available = allProducts.filter((p) => p.status === "available");
+const sold = allProducts.filter((p) => p.status === "sold");
+const sizes = [...new Set(available.map((p) => p.size.eu))].sort((a, b) => a - b);
+---
+
+<Base nav="home">
+  <section class="hero wrap">
+    <h1>Pre-loved shoes you can trust</h1>
+    <p>Every pair is photographed as it is. We call to confirm your order, then send it by TCS. You pay when it arrives.</p>
+    <ul class="trust">
+      <li><b>Cash on delivery</b>Pay at your door</li>
+      <li><b>Order confirmed</b>By call and WhatsApp</li>
+      <li><b>Honest photos</b>Rated out of 10</li>
+    </ul>
+  </section>
+
+  <section class="wrap filter" aria-labelledby="size-h">
+    <h2 id="size-h">Shop by size (EU)</h2>
+    <div class="chips" role="group" aria-label="Filter by EU size" data-chips>
+      <button class="chip" type="button" data-size="all" aria-pressed="true">All</button>
+      {sizes.map((s) => <button class="chip" type="button" data-size={s} aria-pressed="false">{s}</button>)}
+    </div>
+    <p class="small" style="margin-top:8px"><a href="/size-guide/">Not sure of your size? See the size guide</a></p>
+  </section>
+
+  <section class="wrap" aria-label="Available pairs">
+    <ul class="grid" data-grid>
+      {available.map((p) => <ProductCard p={p} />)}
+    </ul>
+    <p class="empty" data-empty>No pairs in this size right now. Pick another size, or message us and we will tell you when one arrives.</p>
+  </section>
+
+  {sold.length > 0 && (
+    <section class="wrap section" aria-label="Recently sold">
+      <h2>Recently sold</h2>
+      <ul class="grid">{sold.map((p) => <ProductCard p={p} />)}</ul>
+    </section>
+  )}
+
+  <section class="wrap section" aria-labelledby="how-h">
+    <h2 id="how-h">How ordering works</h2>
+    <ol class="steps">
+      <li><b>Pick a pair</b><span>Each pair is one of a kind, so check the size and condition.</span></li>
+      <li><b>We confirm by call</b><span>We call or message you on WhatsApp to confirm your address.</span></li>
+      <li><b>Pay on delivery</b><span>TCS delivers to your door. You can track it any time.</span></li>
+    </ol>
+  </section>
+</Base>
+
+<script>
+  const chips = document.querySelectorAll<HTMLButtonElement>("[data-chips] .chip");
+  const cards = document.querySelectorAll<HTMLElement>("[data-grid] [data-card]");
+  const empty = document.querySelector<HTMLElement>("[data-empty]");
+
+  function apply(size: string) {
+    let shown = 0;
+    cards.forEach((c) => {
+      const match = size === "all" || c.dataset.eu === size;
+      c.hidden = !match;
+      if (match) shown++;
+    });
+    chips.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.size === size)));
+    if (empty) empty.style.display = shown === 0 ? "block" : "none";
+  }
+
+  chips.forEach((b) => b.addEventListener("click", () => apply(b.dataset.size ?? "all")));
+</script>

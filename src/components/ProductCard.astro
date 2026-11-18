@@ -1,0 +1,19 @@
+---
+import { rs, sizeLine, type Product } from "../lib/shop";
+interface Props { p: Product }
+const { p } = Astro.props;
+---
+
+<li data-eu={p.size.eu} data-card>
+  <a class="card" href={`/shoe/${p.slug}/`}>
+    <div class="card-img">
+      <img src={p.photos[0]} alt={`${p.name}, ${p.colour}`} width="640" height="800" loading="lazy" decoding="async" />
+      {p.status === "sold" && <span class="tag">Sold</span>}
+    </div>
+    <div class="card-body">
+      <h3>{p.name}</h3>
+      <p class="meta">{sizeLine(p)} · {p.condition}/10</p>
+      <p class="price">{rs(p.price)}</p>
+    </div>
+  </a>
+</li>
