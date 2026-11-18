@@ -4,17 +4,24 @@ import "@fontsource/poppins/500.css";
 import "@fontsource/poppins/600.css";
 import "@fontsource/poppins/700.css";
 import "../styles/global.css";
-import { settings, previewNotes, waLink } from "../lib/shop";
+import Icon from "../components/Icon.astro";
+import { settings, previewNotes, allCategories, productsIn, waLink } from "../lib/shop";
 
 interface Props {
   title?: string;
   description?: string;
-  nav?: "home" | "track" | "sizes" | "";
+  nav?: "shop" | "all" | "sizes" | "track" | "contact" | "";
 }
 const { title, description = "Pre-loved shoes in Pakistan. Real photos, honest condition, cash on delivery with TCS.", nav = "" } = Astro.props;
 const fullTitle = title ? `${title} | ${settings.brand}` : `${settings.brand}: pre-loved shoes, cash on delivery`;
 const notes = previewNotes();
+const cats = allCategories.map((c) => ({ ...c, n: productsIn(c).filter((p) => p.status === "available").length }));
 const wa = waLink("Hi Anchor Shoes, I have a question.");
+const socials = [
+  { label: "Instagram", href: settings.instagram },
+  { label: "TikTok", href: settings.tiktok },
+  { label: "Facebook", href: settings.facebook },
+].filter((s) => s.href);
 ---
 
 <!doctype html>
@@ -35,16 +42,32 @@ const wa = waLink("Hi Anchor Shoes, I have a question.");
   <body>
     <a class="skip" href="#main">Skip to content</a>
     {notes.length > 0 && <div class="preview">Preview build: {notes.join(" · ")}</div>}
-    <div class="strip">{settings.deliveryNote}</div>
-    <header class="site-header">
-      <div class="wrap">
-        <a class="logo" href="/" aria-label={`${settings.brand}, home`}>
+    <div class="ann" data-ann={JSON.stringify(settings.announcements)}><span class="ann__msg">{settings.announcements[0]}</span></div>
+
+    <header class="hdr">
+      <div class="page hdr__row">
+        <button class="icon-btn hdr__menu" type="button" data-open="menu" aria-label="Open menu" aria-controls="panel-menu"><Icon name="menu" /></button>
+        <a class="hdr__logo" href="/" aria-label={`${settings.brand}, home`}>
           <img src="/brand/logo-header.svg" alt={settings.brand} width="190" height="38" />
         </a>
-        <nav class="nav" aria-label="Main">
-          <a class="hide-sm" href="/size-guide/" aria-current={nav === "sizes" ? "page" : undefined}>Size guide</a>
+        <nav class="hdr__nav" aria-label="Main">
+          <div class="drop">
+            <a href="/shoes/" aria-current={nav === "shop" ? "page" : undefined}>Shop by size</a>
+            <div class="drop__panel">
+              {cats.map((c) => <a href={`/size/${c.slug}/`}><span>{c.label}</span><small>{c.n} {c.n === 1 ? "pair" : "pairs"}</small></a>)}
+            </div>
+          </div>
+          <a href="/shoes/" aria-current={nav === "all" ? "page" : undefined}>All shoes</a>
+          <a href="/size-guide/" aria-current={nav === "sizes" ? "page" : undefined}>Size guide</a>
           <a href="/track/" aria-current={nav === "track" ? "page" : undefined}>Track order</a>
+          <a href="/contact/" aria-current={nav === "contact" ? "page" : undefined}>Contact</a>
         </nav>
+        <div class="hdr__icons">
+          <button class="icon-btn" type="button" data-open="search" aria-label="Search" aria-controls="panel-search"><Icon name="search" /></button>
+          <a class="icon-btn hide-sm" href="/account/" aria-label="Account"><Icon name="user" /></a>
+          <a class="icon-btn hide-sm" href="/wishlist/" aria-label="Saved pairs"><Icon name="heart" /><span class="count js-wish-count" hidden>0</span></a>
+          <button class="icon-btn" type="button" data-open="cart" aria-label="Cart" aria-controls="panel-cart"><Icon name="bag" /><span class="count js-cart-count" hidden>0</span></button>
+        </div>
       </div>
     </header>
 
@@ -52,19 +75,90 @@ const wa = waLink("Hi Anchor Shoes, I have a question.");
       <slot />
     </main>
 
-    <footer class="site-footer">
-      <div class="wrap">
-        <img src="/brand/logo-header-reversed.svg" alt={settings.brand} width="210" height="40" />
-        <p>Pre-loved shoes, photographed as they are. We call to confirm every order, then ship by TCS with cash on delivery.</p>
-        <ul class="foot-links">
-          <li><a href="/">Shop</a></li>
-          <li><a href="/size-guide/">Size guide</a></li>
-          <li><a href="/track/">Track order</a></li>
-          {wa && <li><a href={wa} rel="noopener">WhatsApp</a></li>}
-          {settings.phone && <li><a href={`tel:${settings.phone}`}>Call {settings.phone}</a></li>}
-        </ul>
-        <div class="copy">© {new Date().getFullYear()} {settings.brand}</div>
+    <footer class="ftr">
+      <div class="page">
+        <div class="ftr__grid">
+          <div>
+            <img src="/brand/logo-header-reversed.svg" alt={settings.brand} width="210" height="40" />
+            <p>Pre-loved shoes, photographed as they are. We call to confirm every order, then ship by TCS with cash on delivery.</p>
+          </div>
+          <div>
+            <h3>Shop by size</h3>
+            <ul>{cats.map((c) => <li><a href={`/size/${c.slug}/`}>{c.label}</a></li>)}<li><a href="/shoes/">All shoes</a></li></ul>
+          </div>
+          <div>
+            <h3>Help</h3>
+            <ul>
+              <li><a href="/size-guide/">Size guide</a></li>
+              <li><a href="/track/">Track your order</a></li>
+              <li><a href="/contact/">Contact us</a></li>
+              <li><a href="/account/">Your account</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Talk to us</h3>
+            <ul>
+              {wa && <li><a href={wa} rel="noopener">WhatsApp</a></li>}
+              {settings.phone && <li><a href={`tel:${settings.phone}`}>{settings.phone}</a></li>}
+              {settings.email && <li><a href={`mailto:${settings.email}`}>{settings.email}</a></li>}
+              {socials.map((s) => <li><a href={s.href} rel="noopener">{s.label}</a></li>)}
+              {!wa && !settings.phone && !settings.email && <li><a href="/contact/">Contact details</a></li>}
+            </ul>
+          </div>
+        </div>
+        <div class="ftr__bar">
+          <span>© {new Date().getFullYear()} {settings.brand}</span>
+          <div class="chipset"><span>Cash on delivery</span><span>TCS</span></div>
+        </div>
       </div>
     </footer>
+
+    <div class="scrim" data-close></div>
+
+    <aside class="drawer drawer--left" id="panel-menu" aria-label="Menu" inert>
+      <div class="drawer__head"><h2>Menu</h2><button class="icon-btn" type="button" data-close aria-label="Close menu"><Icon name="x" /></button></div>
+      <div class="drawer__body">
+        <p class="menu-title" style="margin-top:0">Shop by size</p>
+        <div class="menu-list">
+          {cats.map((c) => <a href={`/size/${c.slug}/`}><span>{c.label}</span><small>{c.n} {c.n === 1 ? "pair" : "pairs"}</small></a>)}
+          <a href="/shoes/"><span>All shoes</span><Icon name="right" size={18} /></a>
+        </div>
+        <p class="menu-title">Help</p>
+        <div class="menu-list">
+          <a href="/size-guide/"><span>Size guide</span></a>
+          <a href="/track/"><span>Track order</span></a>
+          <a href="/contact/"><span>Contact us</span></a>
+          <a href="/account/"><span>Your account</span></a>
+          <a href="/wishlist/"><span>Saved pairs</span></a>
+        </div>
+      </div>
+    </aside>
+
+    <aside class="drawer drawer--right" id="panel-cart" aria-label="Cart" inert>
+      <div class="drawer__head"><h2>Your cart</h2><button class="icon-btn" type="button" data-close aria-label="Close cart"><Icon name="x" /></button></div>
+      <div class="drawer__body" data-cart-items></div>
+      <div class="drawer__foot" data-cart-foot hidden>
+        <div class="row"><span>Subtotal</span><b data-cart-subtotal></b></div>
+        <p class="small muted">Delivery fee is confirmed when we call you. Pay cash on delivery.</p>
+        <a class="btn btn--block" href="/checkout/">Checkout</a>
+        <a class="btn btn--line btn--block" href="/cart/">View cart</a>
+      </div>
+    </aside>
+
+    <section class="searchpanel" id="panel-search" aria-label="Search" inert>
+      <div class="page">
+        <form class="searchform" action="/search/" method="get" role="search">
+          <label class="sr" for="q-head">Search shoes</label>
+          <input id="q-head" name="q" type="search" placeholder="Search by brand, model, colour or size" autocomplete="off" data-search-input />
+          <button class="btn" type="submit">Search</button>
+          <button class="icon-btn" type="button" data-close aria-label="Close search"><Icon name="x" /></button>
+        </form>
+        <div class="suggest" data-suggest></div>
+      </div>
+    </section>
+
+    <script>
+      import "../scripts/store";
+    </script>
   </body>
 </html>

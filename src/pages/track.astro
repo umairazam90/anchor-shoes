@@ -1,35 +1,52 @@
 ---
 import Base from "../layouts/Base.astro";
-import { settings } from "../lib/shop";
+import Crumbs from "../components/Crumbs.astro";
+import { settings, waLink } from "../lib/shop";
+
+const help = waLink("Hi Anchor Shoes, I cannot find my tracking number. My name is ___.");
 ---
 
 <Base title="Track your order" nav="track" description="Track your Anchor Shoes order on the TCS website.">
-  <div class="wrap prose" data-track data-tcs={settings.tcsTrackUrl}>
-    <h1>Track your order</h1>
-    <p>We send your TCS tracking number by message. Tracking itself happens on the TCS website, so you always see their latest update.</p>
+  <div class="page" data-track data-tcs={settings.tcsTrackUrl}>
+    <Crumbs trail={[{ label: "Track your order" }]} />
+    <div class="prose">
+      <h1>Track your order</h1>
+      <p>We send you a TCS tracking number once your parcel is on its way. Tracking itself happens on the TCS website, so you always see their latest update.</p>
 
-    <!-- shown when the link carries a number: /track/?n=1234567890 -->
-    <div class="panel" data-result hidden>
-      <p class="small" style="margin:0">Your TCS tracking number</p>
-      <p class="big-num" data-number></p>
-      <div class="cta">
-        <a class="btn block" data-open href={settings.tcsTrackUrl} target="_blank" rel="noopener">Open TCS tracking</a>
-        <button class="btn ghost block" type="button" data-copy>Copy number</button>
+      <!-- shown when the link carries a number: /track/?n=1234567890 -->
+      <div class="panel" data-result hidden style="margin-top:18px">
+        <p class="small muted">Your TCS tracking number</p>
+        <p class="big-num" data-number></p>
+        <div class="cols2">
+          <a class="btn" data-open href={settings.tcsTrackUrl} target="_blank" rel="noopener">Open TCS tracking</a>
+          <button class="btn btn--line" type="button" data-copy>Copy number</button>
+        </div>
+        <p class="small muted" style="margin-top:12px">On the TCS page, paste the number and press track.</p>
+        <p class="small" style="margin-top:8px"><a class="link" href="/track/" data-another>Track a different number</a></p>
       </div>
-      <p class="small" data-hint>On the TCS page, paste the number and press track.</p>
+
+      <!-- shown when the page is opened without a number -->
+      <form class="panel" data-form novalidate style="margin-top:18px">
+        <div class="field">
+          <label for="tn">TCS tracking number</label>
+          <input id="tn" name="tn" inputmode="numeric" autocomplete="off" placeholder="For example 1234567890" maxlength="30" />
+          <p class="err" data-error role="alert" hidden>Please enter the tracking number we sent you.</p>
+        </div>
+        <button class="btn btn--block" type="submit">Show tracking</button>
+      </form>
+
+      <ol class="steps" style="margin-top:24px">
+        <li><b>Get your number</b><span>We message it to you when your parcel is handed to TCS.</span></li>
+        <li><b>Open the link</b><span>Tap the link we sent, or type the number above.</span></li>
+        <li><b>Follow it on TCS</b><span>You are taken to the TCS website to see where your parcel is.</span></li>
+      </ol>
+
+      <p class="small muted" style="margin-top:18px">
+        Cannot find your number?
+        {help ? <a class="link" href={help} rel="noopener">Message us on WhatsApp</a> : <a class="link" href="/contact/">Contact us</a>}
+        with your name and phone number.
+      </p>
     </div>
-
-    <!-- shown when you open the page without a number -->
-    <form class="panel" data-form novalidate>
-      <label for="tn">TCS tracking number</label>
-      <input id="tn" name="tn" inputmode="numeric" autocomplete="off" placeholder="For example 1234567890" maxlength="30" />
-      <p class="small" data-error role="alert" style="color:#8a2c1f;margin:6px 0 0" hidden>Please enter the tracking number we sent you.</p>
-      <div class="cta">
-        <button class="btn block" type="submit">Show tracking</button>
-      </div>
-    </form>
-
-    <p class="small">Cannot find your number? Message us on WhatsApp with your name and phone number.</p>
   </div>
 </Base>
 
@@ -39,7 +56,6 @@ import { settings } from "../lib/shop";
   const form = root.querySelector<HTMLFormElement>("[data-form]")!;
   const numEl = root.querySelector<HTMLElement>("[data-number]")!;
   const copyBtn = root.querySelector<HTMLButtonElement>("[data-copy]")!;
-  const hint = root.querySelector<HTMLElement>("[data-hint]")!;
   const err = root.querySelector<HTMLElement>("[data-error]")!;
   const input = root.querySelector<HTMLInputElement>("#tn")!;
 
@@ -57,7 +73,7 @@ import { settings } from "../lib/shop";
       await navigator.clipboard.writeText(numEl.textContent ?? "");
       copyBtn.textContent = "Copied";
     } catch {
-      copyBtn.textContent = "Select and copy the number above";
+      copyBtn.textContent = "Select the number above and copy it";
     }
     setTimeout(() => (copyBtn.textContent = "Copy number"), 2500);
   });
@@ -70,6 +86,5 @@ import { settings } from "../lib/shop";
   });
 
   const fromLink = clean(new URLSearchParams(location.search).get("n"));
-  if (fromLink) show(fromLink);
-  void hint;
+  if (fromLink.length >= 6) show(fromLink);
 </script>

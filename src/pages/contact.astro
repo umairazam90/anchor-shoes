@@ -1,0 +1,74 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import Icon from "../components/Icon.astro";
+import { settings, waLink, waDigits } from "../lib/shop";
+
+const wa = waLink("Hi Anchor Shoes, I have a question.");
+const socials = [
+  { label: "Instagram", href: settings.instagram },
+  { label: "TikTok", href: settings.tiktok },
+  { label: "Facebook", href: settings.facebook },
+].filter((s) => s.href);
+const any = !!(wa || settings.phone || settings.email || settings.address || settings.hours || socials.length);
+---
+
+<Base title="Contact us" nav="contact" description="Contact Anchor Shoes by WhatsApp, phone or message.">
+  <div class="page" data-contact data-wa={waDigits()} data-email={settings.email}>
+    <Crumbs trail={[{ label: "Contact us" }]} />
+    <div class="pagehead"><h1>Contact us</h1><p>Questions about a pair, your size or your order? We reply as soon as we can.</p></div>
+
+    <div class="layout2">
+      <div>
+        <div class="cards" style="grid-template-columns:1fr">
+          {wa && <a class="card-info" href={wa} rel="noopener" style="text-decoration:none"><Icon name="chat" /><div><b>WhatsApp</b><span>Message us any time</span></div></a>}
+          {settings.phone && <a class="card-info" href={`tel:${settings.phone}`} style="text-decoration:none"><Icon name="phone" /><div><b>Call us</b><span>{settings.phone}</span></div></a>}
+          {settings.email && <a class="card-info" href={`mailto:${settings.email}`} style="text-decoration:none"><Icon name="mail" /><div><b>Email</b><span>{settings.email}</span></div></a>}
+          {settings.hours && <div class="card-info"><Icon name="clock" /><div><b>Hours</b><span>{settings.hours}</span></div></div>}
+          {settings.address && <div class="card-info"><Icon name="pin" /><div><b>Address</b><span>{settings.address}</span></div></div>}
+          {socials.map((s) => <a class="card-info" href={s.href} rel="noopener" style="text-decoration:none"><Icon name="camera" /><div><b>{s.label}</b><span>Follow new pairs</span></div></a>)}
+          {!any && <div class="card-info"><Icon name="chat" /><div><b>Contact details coming soon</b><span>Our WhatsApp and phone numbers will be shown here.</span></div></div>}
+        </div>
+
+        <div class="faq">
+          <details class="acc" open><summary>How do I order? <Icon name="down" size={18} /></summary><div class="acc__in"><p>Add a pair to your cart and check out. We call and message you on WhatsApp to confirm, then send it by TCS.</p></div></details>
+          <details class="acc"><summary>How do I pay? <Icon name="down" size={18} /></summary><div class="acc__in"><p>Cash on delivery. You pay the TCS rider when the parcel arrives.</p></div></details>
+          <details class="acc"><summary>How do I track my order? <Icon name="down" size={18} /></summary><div class="acc__in"><p>We send you a TCS tracking number and a link. Open the link or use the <a href="/track/">tracking page</a>.</p></div></details>
+          <details class="acc"><summary>Are the photos of the real pair? <Icon name="down" size={18} /></summary><div class="acc__in"><p>Yes. Every pair is one of a kind, and the photos and flaws describe that exact pair.</p></div></details>
+        </div>
+      </div>
+
+      <form class="panel" data-form novalidate>
+        <h2>Send us a message</h2>
+        <div class="field"><label for="m-name">Your name</label><input id="m-name" name="name" autocomplete="name" required /></div>
+        <div class="field"><label for="m-phone">Mobile number <span class="muted">(optional)</span></label><input id="m-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" /></div>
+        <div class="field"><label for="m-msg">Message</label><textarea id="m-msg" name="message" required></textarea></div>
+        <p class="err-text" data-err role="alert" hidden>Please enter your name and a message.</p>
+        <button class="btn btn--block" type="submit">Send message</button>
+        <p class="small muted" data-hint style="margin-top:10px"></p>
+      </form>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-contact]")!;
+  const form = root.querySelector<HTMLFormElement>("[data-form]")!;
+  const err = root.querySelector<HTMLElement>("[data-err]")!;
+  const hint = root.querySelector<HTMLElement>("[data-hint]")!;
+  const wa = root.dataset.wa ?? "";
+  const email = root.dataset.email ?? "";
+  hint.textContent = wa ? "This opens WhatsApp with your message ready to send." : email ? "This opens your email app with your message ready to send." : "Contact details are not set yet, so messages cannot be sent from this preview.";
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+    const ok = d.name.trim().length > 1 && d.message.trim().length > 2;
+    err.hidden = ok;
+    if (!ok) return;
+    const text = `${d.message.trim()}\n\nName: ${d.name.trim()}${d.phone.trim() ? `\nPhone: ${d.phone.trim()}` : ""}`;
+    if (wa) window.open(`https://wa.me/${wa}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+    else if (email) location.href = `mailto:${email}?subject=${encodeURIComponent("Message from the website")}&body=${encodeURIComponent(text)}`;
+    else hint.textContent = "Preview only: no WhatsApp number or email is set yet, so nothing was sent.";
+  });
+</script>

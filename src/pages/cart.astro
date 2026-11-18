@@ -1,0 +1,66 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+---
+
+<Base title="Your cart" description="Review the pairs in your cart.">
+  <div class="page" data-cart-page>
+    <Crumbs trail={[{ label: "Cart" }]} />
+    <div class="pagehead"><h1>Your cart</h1></div>
+
+    <div class="empty" data-empty hidden>
+      <p>Your cart is empty.</p>
+      <p style="margin-top:14px"><a class="btn" href="/shoes/">Shop all shoes</a></p>
+    </div>
+
+    <div class="layout2" data-full hidden>
+      <div>
+        <div class="cart-lines" data-lines></div>
+        <p style="margin-top:16px"><a class="link" href="/shoes/">Keep shopping</a></p>
+      </div>
+      <aside class="summary">
+        <h2>Order summary</h2>
+        <div class="row"><span>Subtotal</span><b data-subtotal></b></div>
+        <div class="row"><span>Delivery</span><span class="muted">Confirmed on call</span></div>
+        <div class="row total"><span>Total to pay</span><b data-total></b></div>
+        <p class="small muted">Pay cash when TCS delivers. Every pair is one of a kind, so each stays in your cart only until it is sold.</p>
+        <a class="btn btn--block" href="/checkout/">Checkout</a>
+      </aside>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { catalog, getCart, esc, rs } from "../scripts/store";
+
+  const root = document.querySelector<HTMLElement>("[data-cart-page]")!;
+  const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
+
+  async function render() {
+    const slugs = getCart();
+    q("[data-empty]").hidden = slugs.length > 0;
+    q("[data-full]").hidden = slugs.length === 0;
+    if (!slugs.length) return;
+    const items = await catalog();
+    let sub = 0;
+    q("[data-lines]").innerHTML = slugs.map((s) => {
+      const p = items.find((i) => i.slug === s);
+      if (!p) return "";
+      const gone = p.status === "sold";
+      if (!gone) sub += p.price;
+      return `<div class="line ${gone ? "gone" : ""}">
+        <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="76" height="95"></a>
+        <div><a href="/shoe/${esc(p.slug)}/"><b>${esc(p.name)}</b></a>
+          <span class="m">${esc(p.brand)} · EU ${esc(p.eu)} · ${esc(p.condition)}/10</span>
+          ${gone ? '<span class="m" style="color:var(--danger)">Sold, please remove</span>' : ""}
+          <button class="rm" type="button" data-remove="${esc(p.slug)}">Remove</button></div>
+        <span class="pr">${rs(p.price)}</span></div>`;
+    }).join("");
+    q("[data-subtotal]").textContent = rs(sub);
+    q("[data-total]").textContent = rs(sub);
+  }
+
+  render();
+  window.addEventListener("store:change", render);
+  window.addEventListener("storage", render);
+</script>

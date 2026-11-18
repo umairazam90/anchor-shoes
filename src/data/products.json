@@ -3,60 +3,85 @@
     "slug": "nike-blazer-mid",
     "name": "Nike Blazer Mid",
     "colour": "White with black swoosh",
-    "size": { "eu": 42 },
+    "size": {
+      "eu": 42
+    },
     "condition": 8,
     "price": 6500,
     "flaws": "",
-    "photos": ["/images/products/nike-blazer-mid.jpg"],
+    "photos": [
+      "/images/products/nike-blazer-mid.jpg"
+    ],
     "status": "available",
-    "sample": true
+    "sample": true,
+    "brand": "Nike"
   },
   {
     "slug": "nike-air-force-1-shadow",
     "name": "Nike Air Force 1 Shadow",
     "colour": "Peach and white",
-    "size": { "eu": 40 },
+    "size": {
+      "eu": 40
+    },
     "condition": 8,
     "price": 7500,
     "flaws": "",
-    "photos": ["/images/products/nike-air-force-1-shadow.jpg"],
+    "photos": [
+      "/images/products/nike-air-force-1-shadow.jpg"
+    ],
     "status": "available",
-    "sample": true
+    "sample": true,
+    "brand": "Nike"
   },
   {
     "slug": "adidas-suede-sneakers",
     "name": "Adidas Suede Sneakers",
     "colour": "Grey suede",
-    "size": { "eu": 43 },
+    "size": {
+      "eu": 43
+    },
     "condition": 7,
     "price": 4200,
     "flaws": "",
-    "photos": ["/images/products/adidas-suede-sneakers.jpg"],
+    "photos": [
+      "/images/products/adidas-suede-sneakers.jpg"
+    ],
     "status": "available",
-    "sample": true
+    "sample": true,
+    "brand": "Adidas"
   },
   {
     "slug": "nike-air-force-1",
     "name": "Nike Air Force 1",
     "colour": "All white",
-    "size": { "eu": 44 },
+    "size": {
+      "eu": 44
+    },
     "condition": 8,
     "price": 6800,
     "flaws": "",
-    "photos": ["/images/products/nike-air-force-1.jpg"],
+    "photos": [
+      "/images/products/nike-air-force-1.jpg"
+    ],
     "status": "available",
-    "sample": true
+    "sample": true,
+    "brand": "Nike"
   },
   {
     "slug": "hm-leather-sneakers",
     "name": "H&M Leather Sneakers",
     "colour": "White leather",
-    "size": { "eu": 43 },
+    "size": {
+      "eu": 43
+    },
     "condition": 9,
     "price": 3200,
     "flaws": "",
-    "photos": ["/images/products/hm-leather-sneakers.jpg"],
+    "photos": [
+      "/images/products/hm-leather-sneakers.jpg"
+    ],
     "status": "available",
-    "sample": true
+    "sample": true,
+    "brand": "H&M"
   }
 ]

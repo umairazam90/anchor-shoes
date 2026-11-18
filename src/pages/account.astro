@@ -1,0 +1,71 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import Icon from "../components/Icon.astro";
+---
+
+<Base title="Your account" description="Your saved delivery details, saved pairs and order tracking.">
+  <div class="page" data-account>
+    <Crumbs trail={[{ label: "Your account" }]} />
+    <div class="pagehead"><h1>Your account</h1><p>No password needed. Your details are kept on this device only, to save you typing them again at checkout.</p></div>
+
+    <div class="layout2">
+      <form class="panel" data-form novalidate>
+        <h2>Delivery details</h2>
+        <div class="two">
+          <div class="field"><label for="a-name">Full name</label><input id="a-name" name="name" autocomplete="name" /></div>
+          <div class="field"><label for="a-phone">Mobile number</label><input id="a-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="03XX XXXXXXX" /></div>
+        </div>
+        <div class="field"><label for="a-city">City</label><input id="a-city" name="city" autocomplete="address-level2" /></div>
+        <div class="field"><label for="a-address">Full address</label><textarea id="a-address" name="address" autocomplete="street-address"></textarea></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn" type="submit">Save details</button>
+          <button class="btn btn--line" type="button" data-forget>Remove saved details</button>
+        </div>
+        <p class="small muted" data-status role="status" style="margin-top:10px"></p>
+      </form>
+
+      <div>
+        <div class="panel">
+          <h2>Find your order</h2>
+          <p class="small muted" style="margin-bottom:12px">Enter the TCS tracking number we sent you.</p>
+          <form action="/track/" method="get">
+            <div class="field"><label class="sr" for="a-track">TCS tracking number</label><input id="a-track" name="n" inputmode="numeric" autocomplete="off" placeholder="For example 1234567890" required /></div>
+            <button class="btn btn--block" type="submit">Track order</button>
+          </form>
+        </div>
+        <div class="panel">
+          <h2>Saved pairs</h2>
+          <p class="small muted" style="margin-bottom:12px"><span data-wish-n>0</span> saved on this device.</p>
+          <a class="btn btn--line btn--block" href="/wishlist/">View saved pairs</a>
+        </div>
+        <div class="card-info" style="margin-top:14px"><Icon name="package" /><div><b>Order history</b><span>Past orders will appear here once online ordering is switched on. For now, use your tracking number above.</span></div></div>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { getMe, saveMe, getWish } from "../scripts/store";
+
+  const root = document.querySelector<HTMLElement>("[data-account]")!;
+  const form = root.querySelector<HTMLFormElement>("[data-form]")!;
+  const status = root.querySelector<HTMLElement>("[data-status]")!;
+  const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+  const keys = ["name", "phone", "city", "address"] as const;
+
+  const me = getMe();
+  keys.forEach((k) => (field(k).value = me[k] ?? ""));
+  root.querySelector<HTMLElement>("[data-wish-n]")!.textContent = String(getWish().length);
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    saveMe(Object.fromEntries(keys.map((k) => [k, field(k).value.trim()])));
+    status.textContent = "Saved on this device.";
+  });
+  root.querySelector("[data-forget]")!.addEventListener("click", () => {
+    saveMe({});
+    keys.forEach((k) => (field(k).value = ""));
+    status.textContent = "Removed from this device.";
+  });
+</script>

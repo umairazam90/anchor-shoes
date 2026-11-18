@@ -1,0 +1,162 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import { settings, waDigits } from "../lib/shop";
+---
+
+<Base title="Checkout" description="Place your order. Cash on delivery, sent by TCS.">
+  <div class="page" data-checkout data-wa={waDigits()} data-brand={settings.brand}>
+    <Crumbs trail={[{ label: "Cart", href: "/cart/" }, { label: "Checkout" }]} />
+    <div class="pagehead"><h1>Checkout</h1><p>Enter your delivery details. We call you to confirm before anything is sent.</p></div>
+
+    <div class="empty" data-empty hidden>
+      <p>Your cart is empty.</p>
+      <p style="margin-top:14px"><a class="btn" href="/shoes/">Shop all shoes</a></p>
+    </div>
+
+    <div class="done" data-done hidden></div>
+
+    <div class="layout2" data-full hidden>
+      <form data-form novalidate>
+        <div class="panel">
+          <h2>Delivery details</h2>
+          <div class="two">
+            <div class="field"><label for="c-name">Full name</label><input id="c-name" name="name" autocomplete="name" required /><p class="err" hidden></p></div>
+            <div class="field"><label for="c-phone">Mobile number</label><input id="c-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="03XX XXXXXXX" required /><p class="err" hidden></p></div>
+          </div>
+          <div class="two">
+            <div class="field"><label for="c-city">City</label><input id="c-city" name="city" autocomplete="address-level2" required /><p class="err" hidden></p></div>
+            <div class="field"><label for="c-email">Email <span class="muted">(optional)</span></label><input id="c-email" name="email" type="email" autocomplete="email" /><p class="err" hidden></p></div>
+          </div>
+          <div class="field"><label for="c-address">Full address</label><textarea id="c-address" name="address" autocomplete="street-address" placeholder="House, street, area" required></textarea><p class="err" hidden></p></div>
+          <div class="field"><label for="c-notes">Notes <span class="muted">(optional)</span></label><input id="c-notes" name="notes" placeholder="For example, best time to call" /></div>
+          <label class="check"><input type="checkbox" name="remember" checked /> Save these details on this device for next time</label>
+        </div>
+
+        <div class="panel">
+          <h2>Payment</h2>
+          <div class="pay"><input type="radio" checked disabled aria-label="Cash on delivery" /><div><b>Cash on delivery</b><span>Pay the TCS rider when the parcel arrives.</span></div></div>
+        </div>
+
+        <div class="notice" data-notice hidden></div>
+        <button class="btn btn--block" type="submit" style="margin-top:14px">Place order</button>
+      </form>
+
+      <aside class="summary">
+        <h2>Your order</h2>
+        <div class="cart-lines" data-lines></div>
+        <div class="row"><span>Subtotal</span><b data-subtotal></b></div>
+        <div class="row"><span>Delivery</span><span class="muted">Confirmed on call</span></div>
+        <div class="row total"><span>Total to pay</span><b data-total></b></div>
+      </aside>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { catalog, getCart, getMe, saveMe, clearCart, esc, rs, type Item } from "../scripts/store";
+
+  const root = document.querySelector<HTMLElement>("[data-checkout]")!;
+  const q = <T extends HTMLElement>(s: string) => root.querySelector<T>(s)!;
+  const form = q<HTMLFormElement>("[data-form]");
+  const wa = root.dataset.wa ?? "";
+  const brand = root.dataset.brand ?? "Anchor Shoes";
+  let lines: Item[] = [];
+
+  async function load() {
+    const slugs = getCart();
+    const all = await catalog();
+    lines = slugs.map((s) => all.find((i) => i.slug === s)).filter((p): p is Item => !!p);
+    const live = lines.filter((p) => p.status !== "sold");
+    const done = !q("[data-done]").hidden;
+    if (done) return;
+    q("[data-empty]").hidden = lines.length > 0;
+    q("[data-full]").hidden = lines.length === 0;
+    q("[data-lines]").innerHTML = lines.map((p) => `<div class="line ${p.status === "sold" ? "gone" : ""}">
+      <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="76" height="95"></a>
+      <div><b>${esc(p.name)}</b><span class="m">EU ${esc(p.eu)} · ${esc(p.condition)}/10</span>
+        ${p.status === "sold" ? '<span class="m" style="color:var(--danger)">Sold, remove it from your cart</span>' : ""}</div>
+      <span class="pr">${rs(p.price)}</span></div>`).join("");
+    const sub = live.reduce((n, p) => n + p.price, 0);
+    q("[data-subtotal]").textContent = rs(sub);
+    q("[data-total]").textContent = rs(sub);
+  }
+
+  // saved details
+  const me = getMe();
+  (["name", "phone", "city", "address"] as const).forEach((k) => {
+    const el = form.elements.namedItem(k) as HTMLInputElement | null;
+    if (el && me[k]) el.value = me[k]!;
+  });
+
+  function fail(name: string, msg: string) {
+    const el = form.elements.namedItem(name) as HTMLInputElement;
+    el.setAttribute("aria-invalid", "true");
+    const err = el.parentElement!.querySelector<HTMLElement>(".err")!;
+    err.textContent = msg;
+    err.hidden = false;
+  }
+  function clearErrors() {
+    form.querySelectorAll<HTMLElement>("[aria-invalid]").forEach((e) => e.removeAttribute("aria-invalid"));
+    form.querySelectorAll<HTMLElement>(".err").forEach((e) => (e.hidden = true));
+  }
+  const cleanPhone = (v: string) => v.replace(/[\s\-()]/g, "");
+  const phoneOk = (v: string) => /^(\+92|0092|92|0)?3\d{9}$/.test(cleanPhone(v));
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    clearErrors();
+    const d = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+    const live = lines.filter((p) => p.status !== "sold");
+    let first = "";
+    const bad = (n: string, m: string) => { fail(n, m); first ||= n; };
+    if (d.name.trim().length < 3) bad("name", "Please enter your full name.");
+    if (!phoneOk(d.phone)) bad("phone", "Enter a mobile number like 0300 1234567.");
+    if (d.city.trim().length < 2) bad("city", "Please enter your city.");
+    if (d.address.trim().length < 10) bad("address", "Please enter your full address so TCS can find you.");
+    if (d.email.trim() && !/^\S+@\S+\.\S+$/.test(d.email.trim())) bad("email", "That email does not look right.");
+    if (live.length === 0) { const n = q("[data-notice]"); n.hidden = false; n.innerHTML = "<b>Your cart has no available pairs.</b> Remove sold pairs or add new ones."; return; }
+    if (first) { (form.elements.namedItem(first) as HTMLElement).focus(); return; }
+
+    if (d.remember) saveMe({ name: d.name.trim(), phone: d.phone.trim(), city: d.city.trim(), address: d.address.trim() });
+
+    const total = live.reduce((n, p) => n + p.price, 0);
+    const msg = [
+      `New order, ${brand}`,
+      `Name: ${d.name.trim()}`,
+      `Phone: ${d.phone.trim()}`,
+      `City: ${d.city.trim()}`,
+      `Address: ${d.address.trim()}`,
+      ...(d.email.trim() ? [`Email: ${d.email.trim()}`] : []),
+      "",
+      ...live.map((p, i) => `${i + 1}. ${p.name} (EU ${p.eu}) - ${rs(p.price)}`),
+      `Total: ${rs(total)} plus delivery`,
+      "Payment: cash on delivery",
+      ...(d.notes.trim() ? [`Notes: ${d.notes.trim()}`] : []),
+    ].join("\n");
+
+    const done = q("[data-done]");
+    q("[data-full]").hidden = true;
+    done.hidden = false;
+    if (wa) {
+      const url = `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
+      done.innerHTML = `<h2>One last step</h2>
+        <p>Send the message below in WhatsApp. We will call you to confirm your order.</p>
+        <div class="msgbox">${esc(msg)}</div>
+        <p><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Open WhatsApp</a></p>
+        <p class="small"><a class="link" href="/">Back to the shop</a></p>`;
+      window.open(url, "_blank", "noopener");
+      clearCart();
+    } else {
+      done.innerHTML = `<h2>Preview only</h2>
+        <p>Online ordering is not switched on yet, so nothing was sent. This is how your order will look. Your details are saved on this device.</p>
+        <div class="msgbox">${esc(msg)}</div>
+        <p><button class="btn btn--line" type="button" data-back>Back to checkout</button></p>`;
+      done.querySelector("[data-back]")!.addEventListener("click", () => { done.hidden = true; load(); });
+    }
+    scrollTo({ top: 0 });
+  });
+
+  load();
+  window.addEventListener("store:change", load);
+</script>

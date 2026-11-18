@@ -1,0 +1,6 @@
+[
+  { "slug": "eu-38-40", "label": "EU 38–40", "blurb": "Smaller sizes", "from": 38, "to": 40.5 },
+  { "slug": "eu-41-42", "label": "EU 41–42", "blurb": "Medium sizes", "from": 41, "to": 42.5 },
+  { "slug": "eu-43-44", "label": "EU 43–44", "blurb": "Larger sizes", "from": 43, "to": 44.5 },
+  { "slug": "eu-45-up", "label": "EU 45 and up", "blurb": "Extra large sizes", "from": 45, "to": 50 }
+]

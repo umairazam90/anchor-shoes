@@ -1,0 +1,40 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+---
+
+<Base title="Saved pairs" description="Pairs you saved on this device.">
+  <div class="page" data-wishlist>
+    <Crumbs trail={[{ label: "Saved pairs" }]} />
+    <div class="pagehead"><h1>Saved pairs</h1><p>Tap the heart on any pair to save it here. Saved pairs stay on this device.</p></div>
+    <div class="empty" data-empty hidden>
+      <p>You have not saved any pairs yet.</p>
+      <p style="margin-top:14px"><a class="btn" href="/shoes/">Browse shoes</a></p>
+    </div>
+    <ul class="grid" data-results></ul>
+  </div>
+</Base>
+
+<script>
+  import { catalog, cardHTML, getWish, syncState } from "../scripts/store";
+
+  const root = document.querySelector<HTMLElement>("[data-wishlist]")!;
+  const out = root.querySelector<HTMLElement>("[data-results]")!;
+  const empty = root.querySelector<HTMLElement>("[data-empty]")!;
+  let shown = "";
+
+  async function render() {
+    const slugs = getWish();
+    const key = slugs.join(",");
+    if (key === shown) return;
+    shown = key;
+    const all = await catalog();
+    const items = slugs.map((s) => all.find((i) => i.slug === s)).filter((p): p is NonNullable<typeof p> => !!p);
+    empty.hidden = items.length > 0;
+    out.innerHTML = items.map(cardHTML).join("");
+    syncState();
+  }
+  render();
+  window.addEventListener("store:change", render);
+  window.addEventListener("storage", render);
+</script>

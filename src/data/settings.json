@@ -3,6 +3,19 @@
   "tagline": "Pre-loved footwear",
   "whatsapp": "",
   "phone": "",
+  "email": "",
+  "hours": "",
+  "address": "",
+  "instagram": "",
+  "tiktok": "",
+  "facebook": "",
+  "deliveryFee": "",
+  "cities": "",
+  "returnPolicy": "",
   "tcsTrackUrl": "https://www.tcsexpress.com/",
-  "deliveryNote": "Cash on delivery across Pakistan, shipped by TCS."
+  "announcements": [
+    "Cash on delivery across Pakistan",
+    "Every pair photographed as it is",
+    "Delivered by TCS"
+  ]
 }

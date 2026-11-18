@@ -1,0 +1,44 @@
+---
+import Base from "../../../layouts/Base.astro";
+import Crumbs from "../../../components/Crumbs.astro";
+import ShopGrid from "../../../components/ShopGrid.astro";
+import { allCategories, productsIn, sizesIn, sizeSlug, waLink, type Category } from "../../../lib/shop";
+
+export function getStaticPaths() {
+  return allCategories.map((c) => ({ params: { range: c.slug }, props: { cat: c } }));
+}
+const { cat } = Astro.props as { cat: Category };
+const items = productsIn(cat);
+const sizes = sizesIn(cat);
+const count = (eu: number) => items.filter((p) => p.size.eu === eu && p.status === "available").length;
+const ask = waLink(`Hi Anchor Shoes, I am looking for a pair in size EU ${cat.from}-${cat.to}.`);
+---
+
+<Base title={cat.label} nav="shop" description={`Pre-loved shoes in ${cat.label}. ${cat.blurb}, with photos, condition and price.`}>
+  <div class="page">
+    <Crumbs trail={[{ label: "Shop by size", href: "/shoes/" }, { label: cat.label }]} />
+    <div class="pagehead">
+      <h1>{cat.label}</h1>
+      <p>{cat.blurb}. Pick an exact size below or browse everything in this range.</p>
+    </div>
+
+    {sizes.length > 0 && (
+      <div class="pills" aria-label="Exact size">
+        <a class="pill" href={`/size/${cat.slug}/`} aria-current="page">All {cat.label}</a>
+        {sizes.map((eu) => <a class="pill" href={`/size/${cat.slug}/${sizeSlug(eu)}/`}>EU {eu} <small>{count(eu)}</small></a>)}
+      </div>
+    )}
+
+    {items.length > 0
+      ? <ShopGrid products={items} />
+      : (
+        <div class="empty">
+          <p>There are no pairs in {cat.label} right now. New pairs are added often.</p>
+          <p style="margin-top:14px">
+            {ask ? <a class="btn" href={ask} rel="noopener">Ask us on WhatsApp</a> : <a class="btn" href="/contact/">Contact us</a>}
+            <a class="btn btn--line" href="/shoes/" style="margin-left:8px">See all shoes</a>
+          </p>
+        </div>
+      )}
+  </div>
+</Base>

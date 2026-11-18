@@ -1,19 +1,25 @@
 ---
+import Icon from "./Icon.astro";
 import { rs, sizeLine, type Product } from "../lib/shop";
-interface Props { p: Product }
-const { p } = Astro.props;
+interface Props { p: Product; idx?: number }
+const { p, idx = 0 } = Astro.props;
+const sold = p.status === "sold";
+const href = `/shoe/${p.slug}/`;
 ---
 
-<li data-eu={p.size.eu} data-card>
-  <a class="card" href={`/shoe/${p.slug}/`}>
-    <div class="card-img">
-      <img src={p.photos[0]} alt={`${p.name}, ${p.colour}`} width="640" height="800" loading="lazy" decoding="async" />
-      {p.status === "sold" && <span class="tag">Sold</span>}
-    </div>
-    <div class="card-body">
-      <h3>{p.name}</h3>
-      <p class="meta">{sizeLine(p)} · {p.condition}/10</p>
-      <p class="price">{rs(p.price)}</p>
-    </div>
+<li class="pc" data-card data-slug={p.slug} data-eu={p.size.eu} data-brand={p.brand} data-price={p.price} data-cond={p.condition} data-order={idx} data-sold={sold ? "1" : "0"}>
+  <div class="pc__media">
+    <a class="pc__link" href={href} tabindex="-1" aria-hidden="true">
+      <img src={p.photos[0]} alt="" width="640" height="800" loading="lazy" decoding="async" />
+    </a>
+    {sold && <span class="badge">Sold</span>}
+    <button class="pc__heart" type="button" data-wish={p.slug} aria-pressed="false" aria-label={`Save ${p.name}`}><Icon name="heart" size={20} /></button>
+    {!sold && <button class="pc__add" type="button" data-add={p.slug} aria-label={`Add ${p.name} to cart`}><Icon name="plus" size={20} /></button>}
+  </div>
+  <a class="pc__body" href={href}>
+    <span class="pc__brand">{p.brand}</span>
+    <h3 class="pc__title">{p.name}</h3>
+    <span class="pc__meta">{sizeLine(p)} · {p.condition}/10</span>
+    <span class="pc__price">{rs(p.price)}</span>
   </a>
 </li>

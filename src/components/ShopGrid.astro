@@ -1,0 +1,175 @@
+---
+import ProductCard from "./ProductCard.astro";
+import Icon from "./Icon.astro";
+import { allProducts, type Product } from "../lib/shop";
+
+interface Props { products: Product[] }
+const { products } = Astro.props;
+// newest first: products.json is in the order pairs were added
+const list = [...products].sort((a, b) => allProducts.indexOf(b) - allProducts.indexOf(a));
+const brands = [...new Set(list.map((p) => p.brand))].sort();
+const sizes = [...new Set(list.map((p) => p.size.eu))].sort((a, b) => a - b);
+---
+
+<div data-shop>
+  <div class="toolbar">
+    <div class="toolbar__l">
+      <button class="btn btn--line btn--filter" type="button" data-filter-open aria-controls="filters">Filters</button>
+      <span class="shop__count" data-count aria-live="polite"></span>
+    </div>
+    <div>
+      <label class="sr" for="sort">Sort by</label>
+      <select id="sort" data-sort>
+        <option value="new">Newest first</option>
+        <option value="plow">Price: low to high</option>
+        <option value="phigh">Price: high to low</option>
+        <option value="cond">Best condition</option>
+        <option value="size">Size: small to large</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="shop">
+    <aside class="filters" id="filters" data-filters aria-label="Filters">
+      <div class="filters__head">
+        <h2>Filters</h2>
+        <button class="icon-btn" type="button" data-filter-close aria-label="Close filters"><Icon name="x" /></button>
+      </div>
+      <div class="filters__body">
+        {sizes.length > 1 && (
+          <div class="fgroup">
+            <h3>Size (EU)</h3>
+            <div class="pills" data-f="size">
+              {sizes.map((s) => <button class="pill" type="button" aria-pressed="false" data-val={s}>{s}</button>)}
+            </div>
+          </div>
+        )}
+        {brands.length > 1 && (
+          <div class="fgroup">
+            <h3>Brand</h3>
+            <div data-f="brand">
+              {brands.map((b) => <label class="check"><input type="checkbox" value={b} /> {b}</label>)}
+            </div>
+          </div>
+        )}
+        <div class="fgroup">
+          <h3>Price (Rs)</h3>
+          <div class="prange">
+            <div><label class="sr" for="pmin">Lowest price</label><input id="pmin" type="number" inputmode="numeric" min="0" step="100" placeholder="From" data-pmin /></div>
+            <div><label class="sr" for="pmax">Highest price</label><input id="pmax" type="number" inputmode="numeric" min="0" step="100" placeholder="To" data-pmax /></div>
+          </div>
+        </div>
+        <div class="fgroup">
+          <h3>Condition</h3>
+          <div class="pills" data-f="cond">
+            <button class="pill" type="button" aria-pressed="false" data-val="7">7+ / 10</button>
+            <button class="pill" type="button" aria-pressed="false" data-val="8">8+ / 10</button>
+            <button class="pill" type="button" aria-pressed="false" data-val="9">9+ / 10</button>
+          </div>
+        </div>
+        <div class="fgroup">
+          <label class="check"><input type="checkbox" data-sold /> Show sold pairs too</label>
+        </div>
+      </div>
+      <div class="filters__foot">
+        <button class="btn btn--line" type="button" data-clear>Clear all</button>
+        <button class="btn" type="button" data-filter-close><span>Show <span data-count-btn>0</span> pairs</span></button>
+      </div>
+    </aside>
+
+    <div>
+      <ul class="grid" data-grid>
+        {list.map((p) => <ProductCard p={p} idx={allProducts.indexOf(p)} />)}
+      </ul>
+      <div class="empty" data-empty hidden>
+        <p>No pairs match these filters.</p>
+        <p style="margin-top:12px"><button class="btn btn--line" type="button" data-clear>Clear filters</button></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const root = document.querySelector<HTMLElement>("[data-shop]");
+  if (root) {
+    const grid = root.querySelector<HTMLElement>("[data-grid]")!;
+    const cards = [...grid.querySelectorAll<HTMLElement>("[data-card]")];
+    const panel = root.querySelector<HTMLElement>("[data-filters]")!;
+    const sortEl = root.querySelector<HTMLSelectElement>("[data-sort]")!;
+    const pmin = root.querySelector<HTMLInputElement>("[data-pmin]")!;
+    const pmax = root.querySelector<HTMLInputElement>("[data-pmax]")!;
+    const soldEl = root.querySelector<HTMLInputElement>("[data-sold]")!;
+    const empty = root.querySelector<HTMLElement>("[data-empty]")!;
+    const countEl = root.querySelector<HTMLElement>("[data-count]")!;
+    const countBtn = root.querySelector<HTMLElement>("[data-count-btn]")!;
+    const sizeBtns = [...root.querySelectorAll<HTMLElement>('[data-f="size"] .pill')];
+    const condBtns = [...root.querySelectorAll<HTMLElement>('[data-f="cond"] .pill')];
+    const brandBoxes = [...root.querySelectorAll<HTMLInputElement>('[data-f="brand"] input')];
+
+    const on = (b: HTMLElement) => b.getAttribute("aria-pressed") === "true";
+    const num = (v: string) => (v.trim() === "" ? NaN : Number(v));
+
+    function apply() {
+      const sizes = sizeBtns.filter(on).map((b) => Number(b.dataset.val));
+      const brands = brandBoxes.filter((b) => b.checked).map((b) => b.value);
+      const cond = Math.max(0, ...condBtns.filter(on).map((b) => Number(b.dataset.val)));
+      const lo = num(pmin.value), hi = num(pmax.value);
+      const showSold = soldEl.checked;
+      let shown = 0;
+      cards.forEach((c) => {
+        const eu = Number(c.dataset.eu), price = Number(c.dataset.price), cd = Number(c.dataset.cond);
+        const ok =
+          (showSold || c.dataset.sold !== "1") &&
+          (!sizes.length || sizes.includes(eu)) &&
+          (!brands.length || brands.includes(c.dataset.brand!)) &&
+          (isNaN(lo) || price >= lo) && (isNaN(hi) || price <= hi) &&
+          cd >= cond;
+        c.hidden = !ok;
+        if (ok) shown++;
+      });
+      const by: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
+        new: (a, b) => Number(b.dataset.order) - Number(a.dataset.order),
+        plow: (a, b) => Number(a.dataset.price) - Number(b.dataset.price),
+        phigh: (a, b) => Number(b.dataset.price) - Number(a.dataset.price),
+        cond: (a, b) => Number(b.dataset.cond) - Number(a.dataset.cond),
+        size: (a, b) => Number(a.dataset.eu) - Number(b.dataset.eu),
+      };
+      [...cards].sort(by[sortEl.value] ?? by.new).forEach((c) => grid.appendChild(c));
+      const word = shown === 1 ? "pair" : "pairs";
+      countEl.textContent = `${shown} ${word}`;
+      countBtn.textContent = String(shown);
+      empty.hidden = shown !== 0;
+      grid.hidden = shown === 0;
+    }
+
+    function setSheet(open: boolean) {
+      panel.classList.toggle("open", open);
+      document.body.style.overflow = open ? "hidden" : "";
+    }
+
+    root.addEventListener("click", (e) => {
+      const t = e.target as HTMLElement;
+      const pill = t.closest<HTMLElement>('[data-f] .pill');
+      if (pill) {
+        const group = pill.closest<HTMLElement>("[data-f]")!;
+        const was = on(pill);
+        if (group.dataset.f === "cond") condBtns.forEach((b) => b.setAttribute("aria-pressed", "false"));
+        pill.setAttribute("aria-pressed", String(!was));
+        apply();
+        return;
+      }
+      if (t.closest("[data-filter-open]")) { setSheet(true); return; }
+      if (t.closest("[data-filter-close]")) { setSheet(false); return; }
+      if (t.closest("[data-clear]")) {
+        [...sizeBtns, ...condBtns].forEach((b) => b.setAttribute("aria-pressed", "false"));
+        brandBoxes.forEach((b) => (b.checked = false));
+        pmin.value = ""; pmax.value = ""; soldEl.checked = false;
+        apply();
+      }
+    });
+    root.addEventListener("change", apply);
+    root.addEventListener("input", (e) => { if ((e.target as HTMLElement).matches("[data-pmin],[data-pmax]")) apply(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setSheet(false); });
+    apply();
+  }
+</script>

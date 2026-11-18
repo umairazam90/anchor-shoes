@@ -1,0 +1,46 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import { allProducts } from "../lib/shop";
+
+const brands = [...new Set(allProducts.map((p) => p.brand))].sort();
+---
+
+<Base title="Search" description="Search pre-loved shoes by brand, model, colour or size.">
+  <div class="page" data-search>
+    <Crumbs trail={[{ label: "Search" }]} />
+    <div class="pagehead"><h1>Search</h1></div>
+    <form class="searchform" action="/search/" method="get" role="search" style="padding-top:0">
+      <label class="sr" for="q-page">Search shoes</label>
+      <input id="q-page" name="q" type="search" placeholder="Brand, model, colour or size" autocomplete="off" />
+      <button class="btn" type="submit">Search</button>
+    </form>
+    <div class="pills" aria-label="Brands">
+      {brands.map((b) => <a class="pill" href={`/search/?q=${encodeURIComponent(b)}`}>{b}</a>)}
+    </div>
+    <p class="muted" data-summary style="margin:6px 0 16px"></p>
+    <ul class="grid" data-results></ul>
+  </div>
+</Base>
+
+<script>
+  import { catalog, cardHTML, matches, syncState } from "../scripts/store";
+
+  const root = document.querySelector<HTMLElement>("[data-search]")!;
+  const input = root.querySelector<HTMLInputElement>("#q-page")!;
+  const summary = root.querySelector<HTMLElement>("[data-summary]")!;
+  const out = root.querySelector<HTMLElement>("[data-results]")!;
+  const q = (new URLSearchParams(location.search).get("q") ?? "").trim().slice(0, 80);
+  input.value = q;
+
+  (async () => {
+    const all = await catalog();
+    const hits = q ? all.filter((p) => matches(p, q)) : all;
+    hits.sort((a, b) => Number(a.status === "sold") - Number(b.status === "sold"));
+    summary.textContent = q
+      ? hits.length ? `${hits.length} ${hits.length === 1 ? "pair" : "pairs"} for "${q}"` : `No pairs match "${q}". Try a brand or a size, for example "Nike" or "43".`
+      : "Showing every pair. Type a brand, model, colour or size to narrow it down.";
+    out.innerHTML = hits.map(cardHTML).join("");
+    syncState();
+  })();
+</script>
