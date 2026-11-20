@@ -28,7 +28,7 @@ Owner: Umair. Pakistan-based seller of pre-loved shoes (TikTok, Instagram, Faceb
 - **Flaws are required** in the admin (type "None" if none): honest condition is the brand promise.
 
 ## Stack
-Astro 7 (**on-demand rendering**, `@astrojs/cloudflare` 14) + TypeScript on a Cloudflare Worker (wrangler.jsonc; the adapter supplies the entry and the static-assets folder). **D1** (`DB`: pairs, settings; later orders and stock) and **R2** (`PHOTOS`: uploaded photos). Bindings are read with `import { env } from "cloudflare:workers"` and only inside `src/lib/db.ts`. Cloudflare builds from GitHub on every push, so no Cloudflare keys are shared with Claude: **everything is tested locally in the Workers simulator (`npm run build && npm run preview`), the first real Cloudflare deploy of the admin is still unverified.** Do not use `wrangler types`: its generated types clash with the browser types; `src/lib/cf-types.ts` declares the few D1/R2 methods we use.
+Astro 7 (**on-demand rendering**, `@astrojs/cloudflare` 14) + TypeScript on a Cloudflare Worker (wrangler.jsonc; the adapter supplies the entry and the static-assets folder). **D1** (`DB`: pairs, settings; later orders and stock) and **R2** (`PHOTOS`: uploaded photos). Bindings are read with `import { env } from "cloudflare:workers"` and only inside `src/lib/db.ts`. Cloudflare builds from GitHub on every push, so no Cloudflare keys are shared with Claude: **the admin is tested locally in the Workers simulator (`npm run build && npm run preview`). Workers Builds of the `admin-panel` branch is green (2026-11-20) after `session: false` in astro.config.mjs (the adapter otherwise adds an unused SESSION KV store; the first branch build failed with it, cause not confirmed because the build log is only in the dashboard). The admin has not been exercised on real Cloudflare yet: it needs Access, see SETUP-ADMIN.md.** Do not use `wrangler types`: its generated types clash with the browser types; `src/lib/cf-types.ts` declares the few D1/R2 methods we use.
 
 ## Code map
 - `src/middleware.ts`: (1) serves `/img/*` photos from R2, (2) guards `/admin*` and `/api/admin/*` (sign-in + Origin check, `no-store`, `noindex`), (3) loads the shop snapshot into `Astro.locals.shop` for every storefront page.
@@ -70,7 +70,7 @@ Astro 7 (**on-demand rendering**, `@astrojs/cloudflare` 14) + TypeScript on a Cl
 - Second size scale: Umair mentioned "41 and 22"; the site shows EU, UK, US and cm. Confirm what he meant.
 - Make the GitHub repo private.
 - **Domain on Cloudflare** (needed for the admin sign-in path rule), or choose the custom-login fallback.
-- Run the first real deploy of `admin-panel` (preview) and confirm D1/R2 are created; if not, follow SETUP-ADMIN.md step 1.2.
+- Branch preview build is green. Confirm in the Cloudflare dashboard that the D1 database and R2 bucket were created and bound; if not, follow SETUP-ADMIN.md step 1.2.
 - Then give Claude the Access team domain and AUD tag (`TEAM_DOMAIN`, `POLICY_AUD`) to put in wrangler.jsonc.
 
 ## Commands
