@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
 import ProductCard from "../components/ProductCard.astro";
-import { allCategories, allProducts, allBrands, available, productsIn, waLink, settings } from "../lib/shop";
+const { allCategories, allProducts, allBrands, available, productsIn, waLink, settings } = Astro.locals.shop;
 
 const fresh = [...available()].reverse();
 const hero = fresh.slice(0, 3);

@@ -2,15 +2,13 @@
 import Base from "../../../layouts/Base.astro";
 import Crumbs from "../../../components/Crumbs.astro";
 import ShopGrid from "../../../components/ShopGrid.astro";
-import { allCategories, allProducts, productsIn, sizesIn, sizeSlug, type Category } from "../../../lib/shop";
-import { fullSize, has } from "../../../lib/sizes";
+import { sizeSlug } from "../../../lib/shop";
+import { euText, fullSize, has } from "../../../lib/sizes";
 
-export function getStaticPaths() {
-  return allCategories.flatMap((c) =>
-    sizesIn(c).map((eu) => ({ params: { range: c.slug, eu: sizeSlug(eu) }, props: { cat: c, eu } })),
-  );
-}
-const { cat, eu } = Astro.props as { cat: Category; eu: number };
+const { allCategories, allProducts, productsIn, sizesIn } = Astro.locals.shop;
+const cat = allCategories.find((c) => c.slug === Astro.params.range);
+const eu = cat ? sizesIn(cat).find((n) => sizeSlug(n) === Astro.params.eu) : undefined;
+if (!cat || eu === undefined) return Astro.rewrite("/404/");
 const items = allProducts.filter((p) => p.size.eu === eu);
 // UK, US and foot length differ by brand, so this page quotes the Nike chart and points to the guide for the rest.
 const s = fullSize({ eu }, "Nike");
@@ -18,11 +16,11 @@ const sizes = sizesIn(cat);
 const count = (n: number) => productsIn(cat).filter((p) => p.size.eu === n && p.status === "available").length;
 ---
 
-<Base title={`EU ${eu} shoes`} nav="shop" description={`Pre-loved shoes in EU ${eu}${has(s.uk) ? ` (UK ${s.uk}, US ${s.us})` : ""} with photos, condition and price.`}>
+<Base title={`EU ${euText(eu)} shoes`} nav="shop" description={`Pre-loved shoes in EU ${euText(eu)}${has(s.uk) ? ` (UK ${s.uk}, US ${s.us})` : ""} with photos, condition and price.`}>
   <div class="page">
-    <Crumbs trail={[{ label: "Shop by size", href: "/shoes/" }, { label: cat.label, href: `/size/${cat.slug}/` }, { label: `EU ${eu}` }]} />
+    <Crumbs trail={[{ label: "Shop by size", href: "/shoes/" }, { label: cat.label, href: `/size/${cat.slug}/` }, { label: `EU ${euText(eu)}` }]} />
     <div class="pagehead">
-      <h1>EU {eu} shoes</h1>
+      <h1>EU {euText(eu)} shoes</h1>
       <p>
         {has(s.uk)
           ? <>On the Nike chart this is UK {s.uk}, US {s.us}, foot length about {s.cm} cm. Other brands can differ by half a size, so check each pair's own size. <a class="link" href="/size-guide/">Size guide</a></>
@@ -32,7 +30,7 @@ const count = (n: number) => productsIn(cat).filter((p) => p.size.eu === n && p.
 
     <div class="pills" aria-label="Exact size">
       <a class="pill" href={`/size/${cat.slug}/`}>All {cat.label}</a>
-      {sizes.map((n) => <a class="pill" href={`/size/${cat.slug}/${sizeSlug(n)}/`} aria-current={n === eu ? "page" : undefined}>EU {n} <small>{count(n)}</small></a>)}
+      {sizes.map((n) => <a class="pill" href={`/size/${cat.slug}/${sizeSlug(n)}/`} aria-current={n === eu ? "page" : undefined}>EU {euText(n)} <small>{count(n)}</small></a>)}
     </div>
 
     <ShopGrid products={items} />

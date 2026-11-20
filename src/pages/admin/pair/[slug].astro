@@ -1,0 +1,260 @@
+---
+import Admin from "../../../layouts/Admin.astro";
+import { getPair, knownBrands } from "../../../lib/db";
+import { euText } from "../../../lib/sizes";
+
+const slug = Astro.params.slug ?? "";
+const isNew = slug === "new";
+let pair = null;
+let brands: string[] = [];
+let problem = "";
+try {
+  brands = await knownBrands();
+  if (!isNew) pair = await getPair(slug);
+} catch (e) {
+  problem = e instanceof Error ? e.message : "The database could not be read.";
+}
+if (!isNew && !pair && !problem) return new Response(null, { status: 404, headers: { "x-astro-reroute": "no" } });
+
+// EU sizes to suggest while typing (whole and half sizes, plus the adidas thirds)
+const euHints = [];
+for (let n = 36; n <= 50; n += 0.5) euHints.push(String(n));
+for (let n = 38; n <= 49; n++) euHints.push(`${n} 1/3`, `${n} 2/3`);
+
+// data for the script; "<" is escaped so the text can never close the script tag
+const initial = JSON.stringify(
+  pair
+    ? { slug: pair.slug, name: pair.name, brand: pair.brand, colour: pair.colour, eu: euText(pair.size.eu),
+        uk: pair.size.uk ?? "", us: pair.size.us ?? "", cm: pair.size.cm ?? "", insole: pair.insole ?? "",
+        condition: pair.condition, price: pair.price, flaws: pair.flaws, photos: pair.photos, status: pair.status }
+    : { slug: "", name: "", brand: "", colour: "", eu: "", uk: "", us: "", cm: "", insole: "", condition: 8, price: "", flaws: "", photos: [], status: "available" },
+).replace(/</g, "\\u003c");
+
+const conditions = [
+  [10, "10 · like new"], [9, "9 · like new"], [8, "8 · very good"], [7, "7 · good"],
+  [6, "6 · fair"], [5, "5 · fair"], [4, "4 · worn"], [3, "3 · worn"], [2, "2 · heavily worn"], [1, "1 · heavily worn"],
+];
+---
+
+<Admin title={isNew ? "Add a pair" : "Edit pair"} active={isNew ? "add" : undefined}>
+  <div class="adm-title">
+    <h1>{isNew ? "Add a pair" : "Edit pair"}</h1>
+    {pair && <a class="link" href={`/shoe/${pair.slug}/`} target="_blank" rel="noopener">View on the shop ↗</a>}
+  </div>
+
+  {problem && <div class="notice"><b>Cannot open this page.</b> {problem}</div>}
+
+  {!problem && (
+    <form class="adm-form" data-form novalidate>
+      <div class="adm-section">
+        <h2>Photos</h2>
+        <div class="photos" data-photos></div>
+        <label class="photo-add"><input type="file" accept="image/*" multiple data-file /> + Add photos</label>
+        <p class="help">The first photo is the cover. Photos are never cropped, so any shape works. Up to 8.</p>
+        <p class="err" data-err="photos" hidden></p>
+      </div>
+
+      <div class="adm-section">
+        <h2>Details</h2>
+        <div class="adm-grid">
+          <div class="field span2">
+            <label class="lbl" for="f-name">Model name</label>
+            <input id="f-name" name="name" maxlength="80" autocomplete="off" placeholder="Nike Air Force 1" />
+            <p class="err" data-err="name" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="f-brand">Brand</label>
+            <input id="f-brand" name="brand" maxlength="40" list="brands" autocomplete="off" placeholder="Nike" />
+            <datalist id="brands">{brands.map((b) => <option value={b} />)}</datalist>
+            <p class="err" data-err="brand" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="f-colour">Colour <span class="opt">(optional)</span></label>
+            <input id="f-colour" name="colour" maxlength="60" autocomplete="off" placeholder="All white" />
+            <p class="err" data-err="colour" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="f-eu">EU size</label>
+            <input id="f-eu" name="eu" inputmode="decimal" list="eus" autocomplete="off" placeholder="42" />
+            <datalist id="eus">{euHints.map((h) => <option value={h} />)}</datalist>
+            <p class="help">The number printed inside the shoe. adidas thirds: write 42 2/3.</p>
+            <p class="err" data-err="eu" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="f-price">Price (Rs)</label>
+            <input id="f-price" name="price" inputmode="numeric" autocomplete="off" placeholder="6500" />
+            <p class="err" data-err="price" hidden></p>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="f-condition">Condition</label>
+            <select id="f-condition" name="condition">
+              {conditions.map(([v, label]) => <option value={v}>{label}</option>)}
+            </select>
+            <p class="err" data-err="condition" hidden></p>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="f-flaws">Flaws</label>
+            <textarea id="f-flaws" name="flaws" maxlength="600" placeholder="Light creasing on the toe box. Small scuff on the left heel. Or write None."></textarea>
+            <p class="help">Customers see this, so be honest. It is what makes buyers trust you.</p>
+            <p class="err" data-err="flaws" hidden></p>
+          </div>
+        </div>
+      </div>
+
+      <details>
+        <summary>More size details <span class="opt">(optional)</span></summary>
+        <p class="help" style="margin-bottom:12px">Leave these empty to use the brand's size chart (Nike and adidas). Fill them if you measured the pair yourself.</p>
+        <div class="adm-grid">
+          <div class="field"><label class="lbl" for="f-uk">UK size</label><input id="f-uk" name="uk" inputmode="decimal" autocomplete="off" /><p class="err" data-err="uk" hidden></p></div>
+          <div class="field"><label class="lbl" for="f-us">US size</label><input id="f-us" name="us" inputmode="decimal" autocomplete="off" /><p class="err" data-err="us" hidden></p></div>
+          <div class="field"><label class="lbl" for="f-cm">Foot length (cm)</label><input id="f-cm" name="cm" inputmode="decimal" autocomplete="off" /><p class="err" data-err="cm" hidden></p></div>
+          <div class="field"><label class="lbl" for="f-insole">Insole length (cm)</label><input id="f-insole" name="insole" inputmode="decimal" autocomplete="off" /><p class="help">Measured inside the shoe.</p><p class="err" data-err="insole" hidden></p></div>
+        </div>
+      </details>
+
+      {!isNew && (
+        <div class="adm-section">
+          <h2>Status</h2>
+          <div class="radios">
+            <label><input type="radio" name="status" value="available" /> For sale</label>
+            <label><input type="radio" name="status" value="sold" /> Sold</label>
+          </div>
+        </div>
+      )}
+
+      <div class="adm-actions">
+        <button class="btn" type="submit" data-save>{isNew ? "Add this pair" : "Save changes"}</button>
+        <a class="btn btn--line" href="/admin/">Cancel</a>
+        {!isNew && <button class="btn btn--danger" type="button" data-delete>Delete this pair</button>}
+      </div>
+    </form>
+  )}
+
+  <script type="application/json" id="pair-data" set:html={initial} />
+</Admin>
+
+<script>
+  import { api, toast, showErrors, confirmTap, clearErrorsOnEdit } from "../../../scripts/admin";
+
+  const form = document.querySelector<HTMLFormElement>("[data-form]");
+  if (form) {
+    const initial = JSON.parse(document.getElementById("pair-data")!.textContent!);
+    const slug: string = initial.slug;
+    let photos: string[] = [...initial.photos];
+    let busy = 0;
+    const grid = form.querySelector<HTMLElement>("[data-photos]")!;
+    const fileInput = form.querySelector<HTMLInputElement>("[data-file]")!;
+    const save = form.querySelector<HTMLButtonElement>("[data-save]")!;
+
+    // fill the fields
+    for (const key of ["name", "brand", "colour", "eu", "price", "flaws", "uk", "us", "cm", "insole", "condition"]) {
+      const el = form.elements.namedItem(key) as HTMLInputElement | null;
+      if (el) el.value = String(initial[key] ?? "");
+    }
+    form.querySelectorAll<HTMLInputElement>('input[name="status"]').forEach((r) => (r.checked = r.value === initial.status));
+    if (initial.uk !== "" || initial.us !== "" || initial.cm !== "" || initial.insole !== "") form.querySelector("details")!.open = true;
+
+    clearErrorsOnEdit(form);
+
+    /* ---------- photos ---------- */
+    function draw() {
+      grid.innerHTML = "";
+      if (photos.length) { const pe = form!.querySelector<HTMLElement>('[data-err="photos"]'); if (pe) { pe.textContent = ""; pe.hidden = true; } }
+      photos.forEach((url, i) => {
+        const d = document.createElement("div");
+        d.className = "photo";
+        d.innerHTML = `${i === 0 ? '<span class="photo__cover">Cover</span>' : ""}<div class="photo__bar">
+          <button type="button" data-a="left" aria-label="Move earlier" ${i === 0 ? "disabled" : ""}>←</button>
+          <button type="button" data-a="right" aria-label="Move later" ${i === photos.length - 1 ? "disabled" : ""}>→</button>
+          <button type="button" data-a="del" aria-label="Remove photo">✕</button></div>`;
+        const img = document.createElement("img");
+        img.alt = "";
+        img.src = url;
+        d.prepend(img);
+        d.querySelector('[data-a="left"]')!.addEventListener("click", () => { [photos[i - 1], photos[i]] = [photos[i], photos[i - 1]]; draw(); });
+        d.querySelector('[data-a="right"]')!.addEventListener("click", () => { [photos[i + 1], photos[i]] = [photos[i], photos[i + 1]]; draw(); });
+        d.querySelector('[data-a="del"]')!.addEventListener("click", () => { photos.splice(i, 1); draw(); });
+        grid.append(d);
+      });
+      for (let i = 0; i < busy; i++) {
+        const d = document.createElement("div");
+        d.className = "photo photo--busy";
+        grid.append(d);
+      }
+    }
+
+    /** phone photos are 3 to 8 MB: shrink to about 1400 px and 85% JPEG (roughly 200 KB) before uploading */
+    async function shrink(file: File): Promise<Blob> {
+      const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+      const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(bmp.width * k);
+      c.height = Math.round(bmp.height * k);
+      const ctx = c.getContext("2d")!;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(bmp, 0, 0, c.width, c.height);
+      return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("encode"))), "image/jpeg", 0.85));
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const files = [...(fileInput.files ?? [])];
+      fileInput.value = "";
+      const room = 8 - photos.length - busy;
+      if (files.length > room) toast(`Only ${Math.max(room, 0)} more photo${room === 1 ? "" : "s"} fit. The extra ones were skipped.`, "err");
+      for (const f of files.slice(0, Math.max(room, 0))) {
+        busy++; draw(); save.disabled = true;
+        try {
+          const blob = await shrink(f);
+          const body = new FormData();
+          body.append("file", blob, "photo.jpg");
+          const res = await fetch("/api/admin/upload/", { method: "POST", body, redirect: "manual" });
+          if (res.type === "opaqueredirect") throw new Error("Your sign-in has expired. Reload the page to sign in again.");
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error ?? "Upload failed.");
+          photos.push(data.url);
+        } catch (e) {
+          toast(e instanceof Error && e.message !== "encode" ? e.message : `Could not use “${f.name}”. Try a JPG or PNG photo.`, "err");
+        } finally {
+          busy--; draw(); save.disabled = busy > 0;
+        }
+      }
+    });
+    draw();
+
+    /* ---------- save / delete ---------- */
+    function collect() {
+      const v = (n: string) => (form!.elements.namedItem(n) as HTMLInputElement).value.trim();
+      return {
+        name: v("name"), brand: v("brand"), colour: v("colour"),
+        size: { eu: v("eu"), uk: v("uk"), us: v("us"), cm: v("cm") },
+        insole: v("insole"), condition: Number(v("condition")), price: v("price"), flaws: v("flaws"), photos,
+        status: (form!.querySelector<HTMLInputElement>('input[name="status"]:checked')?.value ?? "available"),
+      };
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (busy) return toast("Wait for the photos to finish uploading.", "err");
+      showErrors(form, undefined);
+      save.disabled = true;
+      const r = slug ? await api(`/api/admin/pairs/${slug}/`, "PUT", collect()) : await api("/api/admin/pairs/", "POST", collect());
+      save.disabled = false;
+      if (r.status === 422) {
+        showErrors(form, r.data.errors);
+        return toast("Please fix the highlighted fields.", "err");
+      }
+      if (!r.ok) return toast(r.data?.error ?? "Could not save. Please try again.", "err");
+      location.href = "/admin/?saved=1";
+    });
+
+    const del = form.querySelector<HTMLButtonElement>("[data-delete]");
+    if (del) {
+      confirmTap(del, "Tap again to delete for good", async () => {
+        const r = await api(`/api/admin/pairs/${slug}/`, "DELETE");
+        if (!r.ok) return toast(r.data?.error ?? "Could not delete.", "err");
+        location.href = "/admin/?deleted=1";
+      });
+    }
+  }
+</script>

@@ -1,12 +1,15 @@
-# Anchor Shoes storefront
+# Anchor Shoes storefront and admin
 
-Static Astro 7 site for pre-loved shoes, served from Cloudflare Workers static assets.
+Astro 7 shop for pre-loved shoes, running as a Cloudflare Worker. Pairs and settings live in a Cloudflare D1 database and photos in R2, managed from `/admin/` (sign-in by email code through Cloudflare Access).
 
 ```
 npm install
-npm run dev      # http://localhost:4321
-npm run build    # output in ./dist
+cp .dev.vars.example .dev.vars   # local-only sign-in for /admin on localhost
+npm run build && npm run preview # http://localhost:4321  (admin: /admin/)
+npm test                         # admin sign-in checks
+npm run check                    # type check
 ```
 
-Edit the pairs in `src/data/products.json` and contact details in `src/data/settings.json`.
-See `CLAUDE.md` for decisions and the milestone plan.
+- Add and edit pairs, mark sold, change settings: **`/admin/`**. Setup and daily use: `SETUP-ADMIN.md`.
+- `src/data/products.json` is only the 5 demo pairs inserted on the first run (and the fallback when no database is bound). `src/data/settings.json` holds the default settings; the live values are edited in the admin.
+- Decisions, code map and milestone plan: `CLAUDE.md`.

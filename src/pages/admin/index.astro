@@ -1,0 +1,142 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import { listPairs } from "../../lib/db";
+import { rs } from "../../lib/shop";
+import { euText } from "../../lib/sizes";
+
+let pairs: Awaited<ReturnType<typeof listPairs>> = [];
+let problem = "";
+try {
+  pairs = (await listPairs()).reverse(); // newest first
+} catch (e) {
+  problem = e instanceof Error ? e.message : "The database could not be read.";
+}
+const open = pairs.filter((p) => p.status === "available").length;
+const sold = pairs.length - open;
+const samples = pairs.filter((p) => p.sample).length;
+---
+
+<Admin title="Pairs" active="pairs">
+  <div class="adm-title">
+    <h1>Pairs</h1>
+    <a class="btn btn--brass" href="/admin/pair/new/">+ Add a pair</a>
+  </div>
+
+  {problem && <div class="notice"><b>Cannot show your pairs.</b> {problem}</div>}
+
+  {!problem && (
+    <>
+      <div class="adm-stats">
+        <div class="adm-stat"><b>{open}</b><span>For sale</span></div>
+        <div class="adm-stat"><b>{sold}</b><span>Sold</span></div>
+        <div class="adm-stat"><b>{pairs.length}</b><span>Total</span></div>
+      </div>
+
+      {samples > 0 && (
+        <div class="adm-banner" data-samples>
+          <span><b>{samples} demo pair{samples === 1 ? "" : "s"}</b> came with the first install. Their prices and sizes are made up.</span>
+          <button class="btn btn--line" type="button" data-del-samples>Delete demo pairs</button>
+        </div>
+      )}
+
+      <div class="adm-tools">
+        <input type="search" placeholder="Search name, brand or size" aria-label="Search pairs" data-q />
+        <div class="adm-tabs" role="group" aria-label="Show">
+          <button type="button" aria-pressed="true" data-tab="all">All</button>
+          <button type="button" aria-pressed="false" data-tab="available">For sale</button>
+          <button type="button" aria-pressed="false" data-tab="sold">Sold</button>
+        </div>
+      </div>
+
+      <ul class="adm-list" data-list>
+        {pairs.map((p) => (
+          <li class="adm-row" data-row data-slug={p.slug} data-status={p.status}
+              data-hay={`${p.name} ${p.brand} ${p.colour} eu ${p.size.eu} ${euText(p.size.eu)}`.toLowerCase()}>
+            <a class="adm-thumb" href={`/admin/pair/${p.slug}/`} aria-label={`Edit ${p.name}`}>
+              {p.photos[0] && <img src={p.photos[0]} alt="" loading="lazy" />}
+            </a>
+            <div class="adm-info">
+              <a class="name" href={`/admin/pair/${p.slug}/`}>{p.name}</a>
+              <div class="adm-meta">{p.brand} · EU {euText(p.size.eu)} · {p.condition}/10 · {rs(p.price)}</div>
+              <div class="adm-tags">
+                <span class="tag tag--available" data-tag hidden={p.status !== "available"}>For sale</span>
+                <span class="tag tag--sold" data-tag hidden={p.status !== "sold"}>Sold</span>
+                {p.sample && <span class="tag tag--sample">Demo</span>}
+              </div>
+            </div>
+            <div class="adm-acts">
+              <button class="btn btn--line" type="button" data-toggle>{p.status === "sold" ? "Mark for sale again" : "Mark as sold"}</button>
+              <a class="btn btn--line" href={`/admin/pair/${p.slug}/`}>Edit</a>
+              <a class="btn btn--line" href={`/shoe/${p.slug}/`} target="_blank" rel="noopener">View ↗</a>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p class="adm-empty" data-none hidden={pairs.length > 0}>
+        {pairs.length === 0 ? "No pairs yet. Tap “Add a pair” to list your first one." : "No pairs match."}
+      </p>
+    </>
+  )}
+</Admin>
+
+<script>
+  import { api, toast, confirmTap } from "../../scripts/admin";
+
+  const rows = [...document.querySelectorAll<HTMLElement>("[data-row]")];
+  const q = document.querySelector<HTMLInputElement>("[data-q]");
+  const none = document.querySelector<HTMLElement>("[data-none]");
+  let tab = "all";
+
+  function apply() {
+    const term = (q?.value ?? "").trim().toLowerCase();
+    let shown = 0;
+    for (const r of rows) {
+      const ok = (tab === "all" || r.dataset.status === tab) && (!term || (r.dataset.hay ?? "").includes(term));
+      r.hidden = !ok;
+      if (ok) shown++;
+    }
+    if (none) none.hidden = shown > 0;
+  }
+  q?.addEventListener("input", apply);
+  document.querySelectorAll<HTMLButtonElement>("[data-tab]").forEach((b) =>
+    b.addEventListener("click", () => {
+      tab = b.dataset.tab ?? "all";
+      document.querySelectorAll("[data-tab]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      apply();
+    }),
+  );
+  apply();
+
+  const flag = new URLSearchParams(location.search);
+  if (flag.has("saved")) toast("Saved. The shop is updated.");
+  if (flag.has("deleted")) toast("Pair deleted.");
+  if (flag.has("saved") || flag.has("deleted")) history.replaceState(null, "", location.pathname);
+
+  // mark sold / for sale without leaving the list
+  for (const row of rows) {
+    const btn = row.querySelector<HTMLButtonElement>("[data-toggle]")!;
+    btn.addEventListener("click", async () => {
+      const next = row.dataset.status === "sold" ? "available" : "sold";
+      btn.disabled = true;
+      const r = await api(`/api/admin/pairs/${row.dataset.slug}/`, "PATCH", { status: next });
+      btn.disabled = false;
+      if (!r.ok) return toast(r.data?.error ?? "Could not change the status.", "err");
+      row.dataset.status = next;
+      btn.textContent = next === "sold" ? "Mark for sale again" : "Mark as sold";
+      const tags = row.querySelectorAll<HTMLElement>("[data-tag]");
+      tags[0].hidden = next !== "available";
+      tags[1].hidden = next !== "sold";
+      toast(next === "sold" ? "Marked as sold. It is off the shop now." : "Back on sale. It is on the shop again.");
+      apply();
+    });
+  }
+
+  const del = document.querySelector<HTMLButtonElement>("[data-del-samples]");
+  if (del) {
+    confirmTap(del, "Tap again to delete", async () => {
+      const r = await api("/api/admin/samples/", "DELETE");
+      if (!r.ok) return toast(r.data?.error ?? "Could not delete the demo pairs.", "err");
+      location.reload();
+    });
+  }
+</script>

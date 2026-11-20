@@ -1,0 +1,43 @@
+---
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
+import "../styles/global.css";
+import "../styles/admin.css";
+
+interface Props { title: string; active?: "pairs" | "add" | "settings" }
+const { title, active } = Astro.props;
+const email = Astro.locals.admin?.email ?? "";
+const via = Astro.locals.admin?.via;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#17223B" />
+    <title>{title} | Anchor Shoes admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body class="adm">
+    <header class="adm-hdr">
+      <div class="adm-wrap adm-hdr__row">
+        <a class="adm-brand" href="/admin/"><img src="/brand/logo-header.svg" alt="Anchor Shoes" /><span>Admin</span></a>
+        <nav class="adm-nav" aria-label="Admin">
+          <a href="/admin/" aria-current={active === "pairs" ? "page" : undefined}>Pairs</a>
+          <a href="/admin/pair/new/" aria-current={active === "add" ? "page" : undefined}>Add pair</a>
+          <a href="/admin/settings/" aria-current={active === "settings" ? "page" : undefined}>Settings</a>
+          <a href="/" target="_blank" rel="noopener">View shop ↗</a>
+        </nav>
+      </div>
+    </header>
+    <main class="adm-main"><div class="adm-wrap"><slot /></div></main>
+    <footer class="adm-foot">
+      <div class="adm-wrap">Signed in as {email}{via === "dev" && " (local test sign-in)"}</div>
+    </footer>
+    <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
+  </body>
+</html>

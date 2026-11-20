@@ -3,7 +3,7 @@
 
 export type Item = {
   slug: string; name: string; brand: string; colour: string;
-  eu: number; uk: number | null; us: number | null; cm: number | null;
+  eu: number; euLabel: string; uk: number | null; us: number | null; cm: number | null;
   price: number; condition: number; photo: string; status: "available" | "sold"; flaws: string;
 };
 export type Me = { name?: string; phone?: string; city?: string; address?: string };
@@ -65,14 +65,14 @@ export function cardHTML(p: Item) {
     <a class="pc__body" href="${href}">
       <span class="pc__brand">${esc(p.brand)}</span>
       <h3 class="pc__title">${esc(p.name)}</h3>
-      <span class="pc__meta">EU ${esc(p.eu)} · UK ${esc(uk)} · ${esc(p.condition)}/10</span>
+      <span class="pc__meta">EU ${esc(p.euLabel)} · UK ${esc(uk)} · ${esc(p.condition)}/10</span>
       <span class="pc__price">${rs(p.price)}</span>
     </a>
   </li>`;
 }
 
 export function matches(p: Item, q: string) {
-  const hay = `${p.name} ${p.brand} ${p.colour} eu ${p.eu} size ${p.eu} uk ${p.uk}`.toLowerCase();
+  const hay = `${p.name} ${p.brand} ${p.colour} eu ${p.eu} size ${p.eu} ${p.euLabel} uk ${p.uk}`.toLowerCase();
   return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
 }
 
@@ -125,7 +125,7 @@ async function renderDrawer() {
     return `<div class="line ${gone ? "gone" : ""}">
       <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="76" height="95"></a>
       <div><a href="/shoe/${esc(p.slug)}/"><b>${esc(p.name)}</b></a>
-        <span class="m">EU ${esc(p.eu)} · ${esc(p.condition)}/10</span>
+        <span class="m">EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span>
         ${gone ? '<span class="m" style="color:var(--danger)">Sold, please remove</span>' : ""}
         <button class="rm" type="button" data-remove="${esc(p.slug)}">Remove</button></div>
       <span class="pr">${rs(p.price)}</span></div>`;
@@ -140,7 +140,7 @@ async function renderSuggest(q: string) {
   if (q.trim().length < 2) { box.innerHTML = ""; return; }
   const hits = (await catalog()).filter((p) => matches(p, q)).slice(0, 6);
   box.innerHTML = hits.length
-    ? hits.map((p) => `<a class="sugg" href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="56" height="70"><div><b>${esc(p.name)}</b><span>EU ${esc(p.eu)} · ${esc(p.condition)}/10</span></div><b>${rs(p.price)}</b></a>`).join("")
+    ? hits.map((p) => `<a class="sugg" href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="56" height="70"><div><b>${esc(p.name)}</b><span>EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span></div><b>${rs(p.price)}</b></a>`).join("")
     : `<p class="muted" style="padding:8px 0">No pairs match "${esc(q)}". Try a brand or a size, for example "Nike" or "43".</p>`;
 }
 

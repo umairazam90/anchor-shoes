@@ -19,17 +19,24 @@ Owner: Umair. Pakistan-based seller of pre-loved shoes (TikTok, Instagram, Faceb
 - Orders: customer orders, Umair confirms by call and WhatsApp, ships by TCS with COD only.
 - **Checkout is an interim stub until M2**: with a WhatsApp number set it opens WhatsApp with the order text; without one it shows a "preview only, nothing was sent" panel. It does not reserve stock.
 - **TCS tracking has no API.** Admin stores the TCS tracking number per order. The customer gets the number plus a link `/track/?n=<number>`; the page shows the number and sends them to the TCS website. Do not integrate TCS APIs.
-- WhatsApp and call numbers are settings (src/data/settings.json now, admin-editable later), never hard-coded. Both are set to Umair's real number **+92 311 9362391** (provided 2026-11-20).
+- WhatsApp and call numbers are settings (defaults in src/data/settings.json, **edited in /admin/settings/** and stored in D1), never hard-coded. Both are set to Umair's real number **+92 311 9362391** (provided 2026-11-20).
 - Never put an invented or placeholder phone number in the repo: a fake wa.me link could message a stranger. Only numbers Umair gave us.
 - No Telegram. Alerts by email and Android push (tool to be chosen in M3).
-- **Admin login plan:** Cloudflare Access (Zero Trust) email one-time PIN in front of `/admin` and `/api/admin/*`, and the Worker also verifies the Access JWT. Umair logs in with his own email, no password to store. Fallback if Access is not wanted: custom login (more code and risk).
+- **Admin (phase A built 2026-11-20, branch `admin-panel`, see SETUP-ADMIN.md):** Cloudflare Access (Zero Trust) email one-time PIN in front of `/admin` and `/api/admin/*`, and the Worker **also verifies the Access JWT itself** (`src/lib/access.ts`, jose, checks issuer + audience + email, optional `ADMIN_EMAILS` allow-list). It **fails closed**: with `TEAM_DOMAIN`/`POLICY_AUD` empty every admin route returns 503. Writes also need a same-origin `Origin` header (CSRF guard). `DEV_ADMIN_EMAIL` (in `.dev.vars`, never committed) signs you in on localhost only. Umair logs in with his own email, no password to store. **Access path rules need a domain on Cloudflare** (a bare workers.dev address can only protect the whole Worker, which would lock out customers). Fallback if Access is not wanted or no domain yet: custom login (more code and risk), not built.
+- **Live catalogue (2026-11-20):** pairs and settings live in D1 and are read on every request (the storefront is on-demand rendered, so marking a pair sold shows at once). `src/data/products.json` is now only the **demo seed** inserted on the first run (flagged `sample`), and the fallback when no database is bound. Do not edit it to change the live shop; use /admin.
+- **EU sizes can be thirds (adidas 42 2/3):** always print with `euText()`, build URLs with `sizeSlug()` (`42-2of3`), and use `inRange()` (a category's `to` is its last half size, so it covers up to `to + 0.5`). Never print a raw `p.size.eu`.
+- **Flaws are required** in the admin (type "None" if none): honest condition is the brand promise.
 
 ## Stack
-Astro 7 (static) + TypeScript, deployed on Cloudflare Workers static assets (wrangler.jsonc). Later: Worker API + D1 (orders, stock, settings, pairs) and R2 (photos); the catalogue moves from static JSON to D1 in M2/M3. Cloudflare builds from GitHub on every push, so no Cloudflare keys are shared with Claude.
+Astro 7 (**on-demand rendering**, `@astrojs/cloudflare` 14) + TypeScript on a Cloudflare Worker (wrangler.jsonc; the adapter supplies the entry and the static-assets folder). **D1** (`DB`: pairs, settings; later orders and stock) and **R2** (`PHOTOS`: uploaded photos). Bindings are read with `import { env } from "cloudflare:workers"` and only inside `src/lib/db.ts`. Cloudflare builds from GitHub on every push, so no Cloudflare keys are shared with Claude: **everything is tested locally in the Workers simulator (`npm run build && npm run preview`), the first real Cloudflare deploy of the admin is still unverified.** Do not use `wrangler types`: its generated types clash with the browser types; `src/lib/cf-types.ts` declares the few D1/R2 methods we use.
 
 ## Code map
-- `src/lib/shop.ts`: all data access (products, categories, settings, formatting, WhatsApp helpers, `catalogItems()`). When D1 arrives, only this layer changes.
-- `src/pages/catalog.json.ts` -> `/catalog.json`: lightweight catalogue used by cart, search, saved pairs.
+- `src/middleware.ts`: (1) serves `/img/*` photos from R2, (2) guards `/admin*` and `/api/admin/*` (sign-in + Origin check, `no-store`, `noindex`), (3) loads the shop snapshot into `Astro.locals.shop` for every storefront page.
+- `src/lib/db.ts`: **the only file that touches D1/R2**: schema (`MIGRATIONS`, created on first use; to change tables ADD a new entry, never edit an old one), demo seed, `loadShop()`, admin pair/settings queries.
+- `src/lib/shop.ts`: pure helpers (`rs`, `sizeSlug`, `inRange`, `brandSlug`, `sizeLine`) and `makeShop(products, settings)`, which builds the per-request snapshot (`available()`, `productsIn()`, `allBrands()`, `waLink()`, `catalogItems()`...). Pages do `const { ... } = Astro.locals.shop;`.
+- `src/lib/validate.ts`: validation of pairs and settings (shared rules, whitelisted keys). `src/lib/access.ts`: admin sign-in check (pure, unit-tested in `tests/`).
+- `src/pages/catalog.json.ts` -> `/catalog.json`: live catalogue used by cart, search, saved pairs (items carry `euLabel`).
+- `src/pages/admin/` (pairs list, `pair/[slug]` add/edit with `new`, `settings`), `src/pages/api/admin/` (pairs, upload, settings, samples), `src/layouts/Admin.astro`, `src/styles/admin.css`, `src/scripts/admin.ts`. Admin API URLs need the trailing slash (`trailingSlash: "always"`).
 - `src/scripts/store.ts`: cart, saved pairs, drawers (menu/cart/search), announcement rotation. Imported by `Base.astro`.
 - `src/components/`: `ProductCard`, `ShopGrid` (filters + sort, client-side), `Crumbs`, `Icon`.
 - Pages: `/`, `/shoes/`, `/size/<range>/`, `/size/<range>/<eu>/`, `/brands/`, `/brand/<slug>/`, `/shoe/<slug>/`, `/cart/`, `/checkout/`, `/search/`, `/wishlist/`, `/account/`, `/contact/`, `/track/`, `/size-guide/`, `/returns/`, 404.
@@ -37,17 +44,19 @@ Astro 7 (static) + TypeScript, deployed on Cloudflare Workers static assets (wra
 
 ## Milestones
 1. **M1 storefront (done, restyled 2026-11-18)**: Shopify-style storefront, size categories, cart, search, saved pairs, account-lite, contact, track, size guide. Data in src/data/products.json (all `sample: true` until real values are entered).
-2. M2: real orders: Worker + D1, atomic stock so one pair cannot be sold twice (also across cart items), order saved and alerts triggered.
-3. M3: admin page (add pairs with photos/size/condition/price, mark sold, settings, orders, TCS tracking number + customer link), email + Android alerts.
+2. M2: real orders: orders table in D1 (the D1 binding exists now), atomic stock so one pair cannot be sold twice (also across cart items), order saved and alerts triggered.
+3. M3: admin. **Phase A done (branch `admin-panel`)**: sign-in, pairs with photo upload, mark sold, settings, live catalogue from D1. **Phase B to do**: orders list, TCS tracking number + customer link, email + Android alerts.
 4. M4: security hardening and launch (domain, headers, rate limiting, backups).
 
 ## Conventions
-- Sizes: EU primary (the size printed on the shoe). UK/US/foot length come from the pair's **brand chart** in src/lib/sizes.ts (Nike men's and adidas men's, from nike.com and adidas.com); a pair can override uk/us/cm in products.json, and can add an optional measured `insole` (cm). adidas sells in thirds (42 2/3), so only whole-number adidas sizes (40, 42, 44...) get UK/US. Anything without a chart shows EU only.
+- Sizes: EU primary (the size printed on the shoe). UK/US/foot length come from the pair's **brand chart** in src/lib/sizes.ts (Nike men's and adidas men's, from nike.com and adidas.com); a pair can override uk/us/cm (and add an optional measured `insole`, cm) under *More size details* in the admin. adidas sells whole sizes and thirds (42, 42 2/3, 43 1/3), all on its chart; an adidas half size (42.5) is not on the chart and shows EU only. Anything without a chart shows EU only.
 - Price format "Rs 6,500". Condition is out of 10 with flaws written honestly.
-- products.json order = order added; newest is last (the site shows newest first).
-- Remove `sample: true` from a product once real values are in. The yellow preview ribbon disappears by itself when no samples remain, a WhatsApp number is set and `returnPolicy` is filled in settings.
+- Pair order = order added (D1 `id`); newest is last in `allProducts` (the site shows newest first).
+- Demo pairs are deleted with the *Delete demo pairs* button in /admin. The yellow preview ribbon disappears by itself when no samples remain, a WhatsApp number is set and `returnPolicy` is filled in settings.
 - Settings also hold `deliveryFee`, `cities`, `returnPolicy` (empty = neutral placeholder text on the shoe page).
 - Keep pages mobile-first (390px) with no horizontal scroll. Check with a phone-width screenshot before committing.
+- Photos in admin are shrunk in the browser (1400px, JPEG 85%) before upload; the server accepts JPG/PNG/WebP up to 3 MB, checked by file signature, never by name.
+- Local test: copy `.dev.vars.example` to `.dev.vars`, `npm run build && npm run preview`, `npm test`. Delete `.wrangler/state` for a fresh local database.
 - Brand SVGs in public/brand were generated from the logo script; regenerate rather than hand-editing.
 
 ## Open items from Umair
@@ -60,6 +69,9 @@ Astro 7 (static) + TypeScript, deployed on Cloudflare Workers static assets (wra
 - Urdu wording on the Urdu logos needs a native check (not used on the site).
 - Second size scale: Umair mentioned "41 and 22"; the site shows EU, UK, US and cm. Confirm what he meant.
 - Make the GitHub repo private.
+- **Domain on Cloudflare** (needed for the admin sign-in path rule), or choose the custom-login fallback.
+- Run the first real deploy of `admin-panel` (preview) and confirm D1/R2 are created; if not, follow SETUP-ADMIN.md step 1.2.
+- Then give Claude the Access team domain and AUD tag (`TEAM_DOMAIN`, `POLICY_AUD`) to put in wrangler.jsonc.
 
 ## Commands
-npm run dev | npm run build | npm run preview | npm run check | npm run deploy
+npm run dev | npm run build | npm run preview | npm run check | npm test | npm run deploy

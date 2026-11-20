@@ -1,11 +1,13 @@
 ---
+import { euText } from "../lib/sizes";
 import ProductCard from "./ProductCard.astro";
 import Icon from "./Icon.astro";
-import { allProducts, type Product } from "../lib/shop";
+import type { Product } from "../lib/shop";
 
 /** sizeBar: show the EU size pills above the grid (used on brand pages) instead of inside the filters */
 interface Props { products: Product[]; sizeBar?: boolean }
 const { products, sizeBar = false } = Astro.props;
+const { allProducts } = Astro.locals.shop;
 // newest first: products.json is in the order pairs were added
 const list = [...products].sort((a, b) => allProducts.indexOf(b) - allProducts.indexOf(a));
 const brands = [...new Set(list.map((p) => p.brand))].sort();
@@ -19,7 +21,7 @@ const barSizes = [...new Set(list.filter((p) => p.status === "available").map((p
     <div class="sizebar">
       <span class="sizebar__label">Shop by size (EU)</span>
       <div class="pills" data-f="size">
-        {barSizes.map((s) => <button class="pill" type="button" aria-pressed="false" data-val={s}>EU {s}</button>)}
+        {barSizes.map((s) => <button class="pill" type="button" aria-pressed="false" data-val={s}>EU {euText(s)}</button>)}
       </div>
     </div>
   )}
@@ -51,7 +53,7 @@ const barSizes = [...new Set(list.filter((p) => p.status === "available").map((p
           <div class="fgroup">
             <h3>Size (EU)</h3>
             <div class="pills" data-f="size">
-              {sizes.map((s) => <button class="pill" type="button" aria-pressed="false" data-val={s}>{s}</button>)}
+              {sizes.map((s) => <button class="pill" type="button" aria-pressed="false" data-val={s}>{euText(s)}</button>)}
             </div>
           </div>
         )}

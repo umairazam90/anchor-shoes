@@ -2,12 +2,10 @@
 import Base from "../../layouts/Base.astro";
 import Crumbs from "../../components/Crumbs.astro";
 import ShopGrid from "../../components/ShopGrid.astro";
-import { allBrands, productsOfBrand, waLink, type Brand } from "../../lib/shop";
 
-export function getStaticPaths() {
-  return allBrands().map((b) => ({ params: { brand: b.slug }, props: { brand: b } }));
-}
-const { brand } = Astro.props as { brand: Brand };
+const { allBrands, productsOfBrand, waLink } = Astro.locals.shop;
+const brand = allBrands().find((b) => b.slug === Astro.params.brand);
+if (!brand) return Astro.rewrite("/404/");
 const items = productsOfBrand(brand.slug);
 const others = allBrands().filter((b) => b.slug !== brand.slug);
 const ask = waLink(`Hi Anchor Shoes, I am looking for ${brand.name} shoes in size ___.`);

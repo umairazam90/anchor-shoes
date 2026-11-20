@@ -3,13 +3,12 @@ import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import Crumbs from "../../components/Crumbs.astro";
 import ProductCard from "../../components/ProductCard.astro";
-import { allProducts, available, categoryOf, rs, settings, waLink, sizeSlug, brandSlug, returnSummary, type Product } from "../../lib/shop";
-import { fullSize, has, chartKeyFor, CHARTS } from "../../lib/sizes";
+import { rs, sizeSlug, brandSlug } from "../../lib/shop";
+import { euText, fullSize, has, chartKeyFor, CHARTS } from "../../lib/sizes";
 
-export function getStaticPaths() {
-  return allProducts.map((p) => ({ params: { slug: p.slug }, props: { p } }));
-}
-const { p } = Astro.props as { p: Product };
+const { allProducts, available, categoryOf, settings, waLink, returnSummary } = Astro.locals.shop;
+const p = allProducts.find((x) => x.slug === Astro.params.slug);
+if (!p) return Astro.rewrite("/404/");
 const sold = p.status === "sold";
 const s = fullSize(p.size, p.brand);
 const chartKey = chartKeyFor(p.brand);
@@ -18,7 +17,7 @@ const chartName = chartKey ? CHARTS[chartKey].name : "";
 const sizeNote = has(s.uk)
   ? chartName ? `UK, US and foot length follow the ${chartName} size chart.` : "UK, US and foot length are for this pair."
   : chartKey === "adidas"
-    ? "adidas sizes come in thirds, for example 42 2/3, so the UK and US size is not shown here. The adidas table in the size guide lists them."
+    ? "adidas sells whole sizes and thirds (42, 42 2/3, 43 1/3), so this size is not on the adidas chart. The size guide has the full adidas table."
     : `${p.brand} prints EU sizes only, and fit changes from brand to brand.`;
 const cat = categoryOf(p.size.eu);
 const word = p.condition >= 9 ? "Like new" : p.condition >= 8 ? "Very good" : p.condition >= 7 ? "Good" : "Fair";
@@ -26,8 +25,8 @@ const more = [
   ...available().filter((o) => o.slug !== p.slug && cat && categoryOf(o.size.eu)?.slug === cat.slug),
   ...available().filter((o) => o.slug !== p.slug && !(cat && categoryOf(o.size.eu)?.slug === cat.slug)),
 ].slice(0, 4);
-const ask = waLink(`Hi Anchor Shoes, I am asking about ${p.name} (EU ${p.size.eu}).`);
-const similar = waLink(`Hi Anchor Shoes, please tell me when a pair like ${p.name} in EU ${p.size.eu} comes in.`);
+const ask = waLink(`Hi Anchor Shoes, I am asking about ${p.name} (EU ${euText(p.size.eu)}).`);
+const similar = waLink(`Hi Anchor Shoes, please tell me when a pair like ${p.name} in EU ${euText(p.size.eu)} comes in.`);
 const trail = [
   { label: "Shop by size", href: "/shoes/" },
   ...(cat ? [{ label: cat.label, href: `/size/${cat.slug}/` }] : []),
@@ -35,7 +34,7 @@ const trail = [
 ];
 ---
 
-<Base title={`${p.name}, EU ${p.size.eu}`} nav="shop" description={`${p.brand} ${p.name} in EU ${p.size.eu}, condition ${p.condition}/10. ${rs(p.price)}. Cash on delivery.`}>
+<Base title={`${p.name}, EU ${euText(p.size.eu)}`} nav="shop" description={`${p.brand} ${p.name} in EU ${euText(p.size.eu)}, condition ${p.condition}/10. ${rs(p.price)}. Cash on delivery.`}>
   <div class="page">
     <Crumbs trail={trail} />
     <div class="pdp">
@@ -63,7 +62,7 @@ const trail = [
         <div class="opt">
           <h2>Size</h2>
           <div class="pills" style="margin:0">
-            <span class="pill" aria-current="page">EU {s.eu}</span>
+            <span class="pill" aria-current="page">EU {euText(s.eu)}</span>
             {has(s.uk) && <span class="pill">UK {s.uk}</span>}
             {has(s.us) && <span class="pill">US {s.us}</span>}
             {has(s.cm) && <span class="pill">Foot {s.cm} cm</span>}
@@ -83,7 +82,7 @@ const trail = [
             <b>This pair has been sold.</b>
             <p class="muted" style="margin-top:4px">There may be something similar. See other pairs in your size or ask us.</p>
             <p style="margin-top:12px">
-              {cat && <a class="btn btn--line" href={`/size/${cat.slug}/${sizeSlug(p.size.eu)}/`}>More in EU {p.size.eu}</a>}
+              {cat && <a class="btn btn--line" href={`/size/${cat.slug}/${sizeSlug(p.size.eu)}/`}>More in EU {euText(p.size.eu)}</a>}
               {similar && <a class="btn btn--line" style="margin-left:8px" href={similar} rel="noopener">Ask us</a>}
             </p>
           </div>
@@ -110,7 +109,7 @@ const trail = [
         <details class="acc">
           <summary>Size and fit <Icon name="down" size={18} /></summary>
           <div class="acc__in">
-            <p>EU {s.eu}{has(s.uk) ? ` · UK ${s.uk} · US ${s.us}` : ""}{has(s.cm) ? ` · foot length about ${s.cm} cm` : ""}.</p>
+            <p>EU {euText(s.eu)}{has(s.uk) ? ` · UK ${s.uk} · US ${s.us}` : ""}{has(s.cm) ? ` · foot length about ${s.cm} cm` : ""}.</p>
             {p.insole && <p>Measured insole length of this pair: {p.insole} cm.</p>}
             <p>{sizeNote} If you are between two sizes, choose the larger one, or message us and we will help. <a href="/size-guide/">Size guide</a></p>
           </div>
@@ -144,7 +143,7 @@ const trail = [
 
   {!sold && (
     <div class="stickybar" data-sticky aria-label="Quick buy">
-      <div><small>{p.brand} · EU {p.size.eu}</small><b>{rs(p.price)}</b></div>
+      <div><small>{p.brand} · EU {euText(p.size.eu)}</small><b>{rs(p.price)}</b></div>
       <button class="btn btn--brass" type="button" data-add={p.slug} data-in-label="In your cart, view" data-out-label="Add to cart"><span data-label>Add to cart</span></button>
     </div>
   )}

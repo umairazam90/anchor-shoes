@@ -5,7 +5,7 @@ import "@fontsource/poppins/600.css";
 import "@fontsource/poppins/700.css";
 import "../styles/global.css";
 import Icon from "../components/Icon.astro";
-import { settings, previewNotes, allCategories, productsIn, allBrands, waLink, telHref } from "../lib/shop";
+const { settings, previewNotes, allCategories, productsIn, allBrands, waLink, telHref } = Astro.locals.shop;
 
 interface Props {
   title?: string;

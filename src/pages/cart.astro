@@ -51,7 +51,7 @@ import Crumbs from "../components/Crumbs.astro";
       return `<div class="line ${gone ? "gone" : ""}">
         <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="76" height="95"></a>
         <div><a href="/shoe/${esc(p.slug)}/"><b>${esc(p.name)}</b></a>
-          <span class="m">${esc(p.brand)} · EU ${esc(p.eu)} · ${esc(p.condition)}/10</span>
+          <span class="m">${esc(p.brand)} · EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span>
           ${gone ? '<span class="m" style="color:var(--danger)">Sold, please remove</span>' : ""}
           <button class="rm" type="button" data-remove="${esc(p.slug)}">Remove</button></div>
         <span class="pr">${rs(p.price)}</span></div>`;

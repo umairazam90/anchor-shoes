@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import ShopGrid from "../components/ShopGrid.astro";
-import { allCategories, allProducts, allBrands, productsIn } from "../lib/shop";
+const { allCategories, allProducts, allBrands, productsIn } = Astro.locals.shop;
 
 const brands = allBrands();
 ---

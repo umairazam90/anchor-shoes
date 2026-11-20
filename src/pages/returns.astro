@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
-import { settings, waLink } from "../lib/shop";
+const { settings, waLink } = Astro.locals.shop;
 
 const days = settings.returnWindowDays;
 const help = waLink("Hi Anchor Shoes, I need help with an order.");

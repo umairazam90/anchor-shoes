@@ -1,0 +1,126 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import { getSettings } from "../../lib/db";
+
+let s = null;
+let problem = "";
+try {
+  s = await getSettings();
+} catch (e) {
+  problem = e instanceof Error ? e.message : "The database could not be read.";
+}
+---
+
+<Admin title="Settings" active="settings">
+  <div class="adm-title"><h1>Shop settings</h1></div>
+  {problem && <div class="notice"><b>Cannot open settings.</b> {problem}</div>}
+
+  {s && (
+    <form class="adm-form" data-settings novalidate>
+      <div class="adm-section">
+        <h2>Contact</h2>
+        <div class="adm-grid">
+          <div class="field">
+            <label class="lbl" for="s-whatsapp">WhatsApp number</label>
+            <input id="s-whatsapp" name="whatsapp" inputmode="tel" value={s.whatsapp} placeholder="+92 311 1234567" />
+            <p class="help">Order and “ask about this pair” messages go to this number.</p>
+            <p class="err" data-err="whatsapp" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-phone">Call number</label>
+            <input id="s-phone" name="phone" inputmode="tel" value={s.phone} placeholder="+92 311 1234567" />
+            <p class="err" data-err="phone" hidden></p>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="s-pickup">Self pickup location</label>
+            <input id="s-pickup" name="pickup" value={s.pickup} />
+            <p class="help">Shown on the Contact page only.</p>
+            <p class="err" data-err="pickup" hidden></p>
+          </div>
+          <div class="field"><label class="lbl" for="s-email">Email <span class="opt">(optional)</span></label><input id="s-email" name="email" type="email" value={s.email} /><p class="err" data-err="email" hidden></p></div>
+          <div class="field"><label class="lbl" for="s-hours">Hours <span class="opt">(optional)</span></label><input id="s-hours" name="hours" value={s.hours} placeholder="10am to 8pm" /><p class="err" data-err="hours" hidden></p></div>
+        </div>
+      </div>
+
+      <div class="adm-section">
+        <h2>Delivery and returns</h2>
+        <div class="adm-grid">
+          <div class="field">
+            <label class="lbl" for="s-fee">Delivery charges</label>
+            <input id="s-fee" name="deliveryFee" value={s.deliveryFee} placeholder="Rs 300" />
+            <p class="help">Customers pay these in advance.</p>
+            <p class="err" data-err="deliveryFee" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-cities">Cities you deliver to</label>
+            <input id="s-cities" name="cities" value={s.cities} placeholder="All over Pakistan" />
+            <p class="err" data-err="cities" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-days">Return window (days)</label>
+            <input id="s-days" name="returnWindowDays" inputmode="numeric" value={String(s.returnWindowDays)} />
+            <p class="err" data-err="returnWindowDays" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-track">TCS tracking page link</label>
+            <input id="s-track" name="tcsTrackUrl" inputmode="url" value={s.tcsTrackUrl} />
+            <p class="err" data-err="tcsTrackUrl" hidden></p>
+          </div>
+          <div class="field span2">
+            <label class="lbl" for="s-policy">Return policy summary</label>
+            <textarea id="s-policy" name="returnPolicy" maxlength="400" rows="5" style="min-height:150px">{s.returnPolicy}</textarea>
+            <p class="help">Shown on every shoe page. Write <b>{"{days}"}</b> where the number of days should appear.</p>
+            <p class="err" data-err="returnPolicy" hidden></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="adm-section">
+        <h2>Announcement bar</h2>
+        <div class="field">
+          <label class="lbl" for="s-ann">Lines at the top of every page</label>
+          <textarea id="s-ann" name="announcements" rows="4">{s.announcements.join("\n")}</textarea>
+          <p class="help">One line each, up to 6. They take turns.</p>
+          <p class="err" data-err="announcements" hidden></p>
+        </div>
+      </div>
+
+      <div class="adm-section">
+        <h2>Social links <span class="opt">(optional)</span></h2>
+        <div class="adm-grid">
+          <div class="field"><label class="lbl" for="s-ig">Instagram</label><input id="s-ig" name="instagram" inputmode="url" value={s.instagram} placeholder="https://instagram.com/…" /><p class="err" data-err="instagram" hidden></p></div>
+          <div class="field"><label class="lbl" for="s-tt">TikTok</label><input id="s-tt" name="tiktok" inputmode="url" value={s.tiktok} placeholder="https://tiktok.com/@…" /><p class="err" data-err="tiktok" hidden></p></div>
+          <div class="field span2"><label class="lbl" for="s-fb">Facebook</label><input id="s-fb" name="facebook" inputmode="url" value={s.facebook} placeholder="https://facebook.com/…" /><p class="err" data-err="facebook" hidden></p></div>
+        </div>
+      </div>
+
+      <div class="adm-actions">
+        <button class="btn" type="submit" data-save>Save settings</button>
+        <a class="btn btn--line" href="/admin/">Back to pairs</a>
+      </div>
+    </form>
+  )}
+</Admin>
+
+<script>
+  import { api, toast, showErrors, clearErrorsOnEdit } from "../../scripts/admin";
+
+  const form = document.querySelector<HTMLFormElement>("[data-settings]");
+  if (form) clearErrorsOnEdit(form);
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body: Record<string, string> = {};
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name) body[el.name] = el.value;
+    showErrors(form, undefined);
+    const save = form.querySelector<HTMLButtonElement>("[data-save]")!;
+    save.disabled = true;
+    const r = await api("/api/admin/settings/", "PUT", body);
+    save.disabled = false;
+    if (r.status === 422) {
+      showErrors(form, r.data.errors);
+      return toast("Please fix the highlighted fields.", "err");
+    }
+    if (!r.ok) return toast(r.data?.error ?? "Could not save. Please try again.", "err");
+    toast("Settings saved. The shop shows them now.");
+  });
+</script>

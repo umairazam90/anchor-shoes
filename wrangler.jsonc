@@ -2,8 +2,19 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "anchor-shoes",
   "compatibility_date": "2026-11-01",
-  "assets": {
-    "directory": "./dist",
-    "not_found_handling": "404-page"
+
+  // The Astro adapter fills in the Worker entry and the static assets folder at build time.
+  // These two bindings have no IDs on purpose: Wrangler creates them on the first deploy (automatic
+  // provisioning). If that is ever blocked, create them in the Cloudflare dashboard and paste the IDs
+  // here (see SETUP-ADMIN.md).
+  "d1_databases": [{ "binding": "DB" }], // pairs + settings (tables are created by src/lib/db.ts)
+  "r2_buckets": [{ "binding": "PHOTOS" }], // uploaded photos, served at /img/...
+
+  // Admin sign-in (Cloudflare Access). Filled in once Access is set up, see SETUP-ADMIN.md.
+  // Not secrets: the AUD tag only identifies the Access application.
+  "vars": {
+    "TEAM_DOMAIN": "", // https://<your-team>.cloudflareaccess.com
+    "POLICY_AUD": "", // the Access application's AUD tag
+    "ADMIN_EMAILS": "" // optional extra allow-list, comma separated
   }
 }

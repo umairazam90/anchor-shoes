@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import { CHARTS, type ChartRow } from "../lib/sizes";
-import { allCategories } from "../lib/shop";
+const { allCategories } = Astro.locals.shop;
 
 const tables: { id: string; title: string; note: string; rows: ChartRow[] }[] = [
   { id: "nike", title: "Nike and Jordan", note: "Men's sizes from the Nike size chart.", rows: CHARTS.nike.rows },

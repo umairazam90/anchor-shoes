@@ -1,0 +1,3 @@
+# Copy this file to .dev.vars for local testing (npm run dev / npm run preview). .dev.vars is never committed.
+# Signs you in to /admin as this email, but ONLY when the site is opened on localhost.
+DEV_ADMIN_EMAIL=you@example.com
