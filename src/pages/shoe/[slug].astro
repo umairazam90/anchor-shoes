@@ -3,15 +3,23 @@ import Base from "../../layouts/Base.astro";
 import Icon from "../../components/Icon.astro";
 import Crumbs from "../../components/Crumbs.astro";
 import ProductCard from "../../components/ProductCard.astro";
-import { allProducts, available, categoryOf, rs, settings, waLink, sizeSlug, type Product } from "../../lib/shop";
-import { fullSize, fmt } from "../../lib/sizes";
+import { allProducts, available, categoryOf, rs, settings, waLink, sizeSlug, brandSlug, returnSummary, type Product } from "../../lib/shop";
+import { fullSize, has, chartKeyFor, CHARTS } from "../../lib/sizes";
 
 export function getStaticPaths() {
   return allProducts.map((p) => ({ params: { slug: p.slug }, props: { p } }));
 }
 const { p } = Astro.props as { p: Product };
 const sold = p.status === "sold";
-const s = fullSize(p.size);
+const s = fullSize(p.size, p.brand);
+const chartKey = chartKeyFor(p.brand);
+const chartName = chartKey ? CHARTS[chartKey].name : "";
+// UK, US and foot length come from the brand's own chart. Brands without a published chart show EU only.
+const sizeNote = has(s.uk)
+  ? chartName ? `UK, US and foot length follow the ${chartName} size chart.` : "UK, US and foot length are for this pair."
+  : chartKey === "adidas"
+    ? "adidas sizes come in thirds, for example 42 2/3, so the UK and US size is not shown here. The adidas table in the size guide lists them."
+    : `${p.brand} prints EU sizes only, and fit changes from brand to brand.`;
 const cat = categoryOf(p.size.eu);
 const word = p.condition >= 9 ? "Like new" : p.condition >= 8 ? "Very good" : p.condition >= 7 ? "Good" : "Fair";
 const more = [
@@ -46,19 +54,20 @@ const trail = [
       </div>
 
       <div class="pdp__info">
-        <p class="pdp__brand">{p.brand}</p>
+        <p class="pdp__brand"><a href={`/brand/${brandSlug(p.brand)}/`} style="text-decoration:none">{p.brand}</a></p>
         <h1>{p.name}</h1>
         <p class="pdp__price">{rs(p.price)}</p>
-        <p class="small muted">Delivery fee is confirmed when we call you.</p>
+        <p class="small muted">Delivery charges are paid in advance.</p>
         <div class="tag-row"><span class="tagc">{word}</span><span class="tagc">{p.colour}</span>{sold ? <span class="tagc">Sold</span> : <span class="tagc">One pair only</span>}</div>
 
         <div class="opt">
           <h2>Size</h2>
           <div class="pills" style="margin:0">
             <span class="pill" aria-current="page">EU {s.eu}</span>
-            <span class="pill">UK {fmt(s.uk)}</span>
-            <span class="pill">US {fmt(s.us)}</span>
-            <span class="pill">{fmt(s.cm)} cm</span>
+            {has(s.uk) && <span class="pill">UK {s.uk}</span>}
+            {has(s.us) && <span class="pill">US {s.us}</span>}
+            {has(s.cm) && <span class="pill">Foot {s.cm} cm</span>}
+            {p.insole && <span class="pill">Insole {p.insole} cm</span>}
           </div>
           <small class="m">Fit changes by brand. <a href="/size-guide/">See the size guide</a>.</small>
         </div>
@@ -90,8 +99,8 @@ const trail = [
 
         <div class="assure">
           <div><Icon name="truck" size={20} /> Cash on delivery</div>
-          <div><Icon name="phone" size={20} /> We call you to confirm before sending</div>
-          <div><Icon name="package" size={20} /> Sent by TCS with a tracking number</div>
+          <div><Icon name="camera" size={20} /> Real photos of this exact pair</div>
+          <div><Icon name="package" size={20} /> Delivery charges are paid in advance</div>
         </div>
 
         <details class="acc" open>
@@ -100,18 +109,22 @@ const trail = [
         </details>
         <details class="acc">
           <summary>Size and fit <Icon name="down" size={18} /></summary>
-          <div class="acc__in"><p>EU {s.eu} · UK {fmt(s.uk)} · US {fmt(s.us)} · about {fmt(s.cm)} cm foot length.</p><p>This is an approximate men's conversion. If you are between sizes, message us and we will help you choose.</p></div>
+          <div class="acc__in">
+            <p>EU {s.eu}{has(s.uk) ? ` · UK ${s.uk} · US ${s.us}` : ""}{has(s.cm) ? ` · foot length about ${s.cm} cm` : ""}.</p>
+            {p.insole && <p>Measured insole length of this pair: {p.insole} cm.</p>}
+            <p>{sizeNote} If you are between two sizes, choose the larger one, or message us and we will help. <a href="/size-guide/">Size guide</a></p>
+          </div>
         </details>
         <details class="acc">
           <summary>Delivery and payment <Icon name="down" size={18} /></summary>
           <div class="acc__in">
-            <p>We call and message you on WhatsApp to confirm, then send the pair by TCS. You pay cash on delivery and get a tracking number.</p>
-            <p>{settings.deliveryFee ? `Delivery fee: ${settings.deliveryFee}.` : "The delivery fee is confirmed when we call you."}{settings.cities ? ` We deliver to: ${settings.cities}.` : ""}</p>
+            <p>You pay for the pair in cash when the parcel arrives. Delivery charges are paid in advance, before the parcel is sent.</p>
+            <p>{settings.deliveryFee ? `Delivery charges: ${settings.deliveryFee}.` : "We tell you the delivery charges when you place your order."}{settings.cities ? ` We deliver to: ${settings.cities}.` : ""}</p>
           </div>
         </details>
         <details class="acc">
           <summary>Returns <Icon name="down" size={18} /></summary>
-          <div class="acc__in"><p>{settings.returnPolicy || "Our return and exchange policy will be shown here. If you are unsure about a pair, ask us before you order."}</p></div>
+          <div class="acc__in"><p>{returnSummary() || "Read our return policy for exchanges and refunds."} <a href="/returns/">Full return policy</a></p></div>
         </details>
 
         <p style="margin-top:14px">
@@ -149,8 +162,15 @@ const trail = [
 
   const sticky = document.querySelector<HTMLElement>("[data-sticky]");
   const box = document.querySelector<HTMLElement>("[data-buybox]");
-  if (sticky && box && "IntersectionObserver" in window) {
-    new IntersectionObserver(([e]) => sticky.classList.toggle("show", !e.isIntersecting && e.boundingClientRect.top < 0)).observe(box);
+  // Show the quick-buy bar once the main buy buttons have scrolled off the top. A scroll check (not an
+  // IntersectionObserver) so it also works when the page jumps past the buy box in one go.
+  if (sticky && box) {
+    let queued = false;
+    const update = () => { queued = false; sticky.classList.toggle("show", box.getBoundingClientRect().bottom < 0); };
+    const queue = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
+    addEventListener("scroll", queue, { passive: true });
+    addEventListener("resize", queue);
+    update();
   }
 
   const share = document.querySelector<HTMLAnchorElement>("[data-share]");

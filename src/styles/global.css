@@ -89,7 +89,7 @@ body[data-panel="search"] #panel-search { transform: none; visibility: visible; 
 .searchform input { flex: 1; min-width: 0; }
 .suggest { padding-bottom: 18px; display: grid; gap: 4px; }
 .sugg { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 8px 0; text-decoration: none; border-top: 1px solid var(--line); }
-.sugg img { width: 56px; height: 70px; object-fit: cover; border-radius: 4px; background: var(--soft); }
+.sugg img { width: 56px; height: 70px; object-fit: contain; object-position: center; border-radius: 4px; background: var(--soft); }
 .sugg b { display: block; font-size: 14px; font-weight: 600; }
 .sugg span { font-size: 13px; color: var(--muted); }
 
@@ -114,9 +114,12 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 .hero__cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .hero .btn--line { color: #fff; border-color: #fff; }
 .hero .btn--line:hover { background: rgba(255, 255, 255, 0.1); }
-.mosaic { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; aspect-ratio: 5 / 4; min-height: 0; }
-.mosaic img { width: 100%; height: 100%; min-height: 0; object-fit: cover; border-radius: 8px; }
-.mosaic img:first-child { grid-row: 1 / 3; }
+/* Photos are never cropped: every photo box uses object-fit: contain and is centred. */
+.mosaic { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px; }
+.mosaic__i { position: relative; background: var(--navy-2); border-radius: 8px; overflow: hidden; }
+.mosaic__i:not(:first-child) { aspect-ratio: 4 / 5; }
+.mosaic__i:first-child { grid-row: 1 / 3; }
+.mosaic__i img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; }
 
 /* feature row */
 .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border-bottom: 1px solid var(--line); background: var(--cream); }
@@ -127,23 +130,24 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 
 /* tiles */
 .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.tile { position: relative; display: block; aspect-ratio: 1 / 1; border-radius: 8px; overflow: hidden; background: var(--navy); color: #fff; text-decoration: none; }
-.tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
-.tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(23, 34, 59, 0) 35%, rgba(23, 34, 59, 0.85)); }
-.tile:hover img { transform: scale(1.05); }
-.tile__txt { position: absolute; left: 14px; right: 14px; bottom: 12px; z-index: 1; }
+.tile { display: block; border-radius: 8px; overflow: hidden; background: var(--navy); color: #fff; text-decoration: none; }
+.tile__img { display: block; position: relative; aspect-ratio: 4 / 5; background: var(--navy-2); overflow: hidden; }
+.tile__img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; transition: transform 0.4s; }
+.tile:hover .tile__img img { transform: scale(1.03); }
+.tile__txt { display: block; padding: 12px 14px 14px; }
 .tile__txt b { display: block; font-size: 17px; font-weight: 600; }
 .tile__txt span { font-size: 12.5px; color: #dfe3ee; }
-.tile--empty { background: repeating-linear-gradient(135deg, var(--navy), var(--navy) 12px, var(--navy-2) 12px, var(--navy-2) 24px); }
-.tile--empty::after { display: none; }
-.tile--empty .tile__txt { bottom: auto; top: 50%; transform: translateY(-50%); text-align: center; }
+.tile--empty .tile__img { background: repeating-linear-gradient(135deg, var(--navy), var(--navy) 12px, var(--navy-2) 12px, var(--navy-2) 24px); }
+.sizebar { margin: 4px 0 6px; }
+.sizebar__label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+.pills-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 6px 0 -2px; }
 
 /* product cards */
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 12px; }
 .pc { position: relative; }
 .pc__media { position: relative; aspect-ratio: 4 / 5; background: var(--soft); border-radius: 8px; overflow: hidden; }
 .pc__link, .pc__link img { display: block; width: 100%; height: 100%; }
-.pc__link img { object-fit: cover; transition: transform 0.4s; }
+.pc__link img { object-fit: contain; object-position: center; transition: transform 0.4s; }
 .pc:hover .pc__link img { transform: scale(1.04); }
 .pc__heart { position: absolute; top: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255, 255, 255, 0.92); border: 0; display: grid; place-items: center; cursor: pointer; color: var(--navy); }
 .pc__heart[aria-pressed="true"] { color: var(--brass-deep); }
@@ -193,11 +197,11 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 /* product page */
 .pdp { display: grid; gap: 22px; padding: 8px 0 24px; }
 .gallery__main { aspect-ratio: 4 / 5; background: var(--soft); border-radius: 10px; overflow: hidden; position: relative; }
-.gallery__main img { width: 100%; height: 100%; object-fit: cover; }
+.gallery__main img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .gallery__thumbs { display: flex; gap: 8px; margin-top: 8px; }
 .gallery__thumbs button { width: 64px; height: 80px; padding: 0; border: 2px solid transparent; border-radius: 6px; overflow: hidden; cursor: pointer; background: var(--soft); }
 .gallery__thumbs button[aria-current="true"] { border-color: var(--navy); }
-.gallery__thumbs img { width: 100%; height: 100%; object-fit: cover; }
+.gallery__thumbs img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .pdp__brand { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 .pdp h1 { font-size: 26px; letter-spacing: -0.01em; margin-top: 4px; }
 .pdp__price { font-size: 24px; font-weight: 700; margin: 12px 0 2px; }
@@ -233,7 +237,7 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 /* cart + checkout */
 .cart-lines { display: grid; }
 .line { display: grid; grid-template-columns: 76px 1fr auto; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: start; }
-.line img { width: 76px; height: 95px; object-fit: cover; border-radius: 6px; background: var(--soft); }
+.line img { width: 76px; height: 95px; object-fit: contain; object-position: center; border-radius: 6px; background: var(--soft); }
 .line a { text-decoration: none; }
 .line b { display: block; font-size: 14.5px; font-weight: 600; }
 .line span.m { display: block; font-size: 13px; color: var(--muted); }
@@ -259,6 +263,14 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 .prose { max-width: 70ch; }
 .prose h1 { font-size: 28px; margin: 18px 0 8px; }
 .prose p { color: var(--muted); }
+.prose h2 { font-size: 20px; margin: 30px 0 8px; }
+.prose p + p { margin-top: 10px; }
+.prose ul { list-style: disc; padding-left: 20px; color: var(--muted); display: grid; gap: 6px; margin-top: 8px; }
+.prose ol.plain { list-style: decimal; padding-left: 22px; color: var(--muted); display: grid; gap: 6px; margin-top: 8px; }
+.prose a { text-underline-offset: 3px; }
+.prose .notice { color: var(--navy); }
+.prose .notice p { color: var(--navy); }
+.table-title { font-size: 20px; margin: 30px 0 10px; }
 .cards { display: grid; gap: 12px; margin: 18px 0; }
 .card-info { display: flex; gap: 14px; background: var(--cream); border-radius: 10px; padding: 16px; align-items: flex-start; }
 .card-info .icon { color: var(--brass-deep); margin-top: 2px; }
@@ -297,7 +309,6 @@ tr:last-child td { border-bottom: 0; }
   .hero h1 { font-size: 46px; }
   .features { grid-template-columns: repeat(4, 1fr); }
   .tiles { grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .tile { aspect-ratio: 4 / 5; }
   .grid { grid-template-columns: repeat(3, 1fr); gap: 28px 18px; }
   .pagehead h1 { font-size: 34px; }
   .pdp { grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: start; }

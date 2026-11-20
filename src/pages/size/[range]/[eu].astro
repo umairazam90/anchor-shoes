@@ -3,7 +3,7 @@ import Base from "../../../layouts/Base.astro";
 import Crumbs from "../../../components/Crumbs.astro";
 import ShopGrid from "../../../components/ShopGrid.astro";
 import { allCategories, allProducts, productsIn, sizesIn, sizeSlug, type Category } from "../../../lib/shop";
-import { fullSize, fmt } from "../../../lib/sizes";
+import { fullSize, has } from "../../../lib/sizes";
 
 export function getStaticPaths() {
   return allCategories.flatMap((c) =>
@@ -12,17 +12,22 @@ export function getStaticPaths() {
 }
 const { cat, eu } = Astro.props as { cat: Category; eu: number };
 const items = allProducts.filter((p) => p.size.eu === eu);
-const s = fullSize({ eu });
+// UK, US and foot length differ by brand, so this page quotes the Nike chart and points to the guide for the rest.
+const s = fullSize({ eu }, "Nike");
 const sizes = sizesIn(cat);
 const count = (n: number) => productsIn(cat).filter((p) => p.size.eu === n && p.status === "available").length;
 ---
 
-<Base title={`EU ${eu} shoes`} nav="shop" description={`Pre-loved shoes in EU ${eu} (UK ${fmt(s.uk)}, US ${fmt(s.us)}) with photos, condition and price.`}>
+<Base title={`EU ${eu} shoes`} nav="shop" description={`Pre-loved shoes in EU ${eu}${has(s.uk) ? ` (UK ${s.uk}, US ${s.us})` : ""} with photos, condition and price.`}>
   <div class="page">
     <Crumbs trail={[{ label: "Shop by size", href: "/shoes/" }, { label: cat.label, href: `/size/${cat.slug}/` }, { label: `EU ${eu}` }]} />
     <div class="pagehead">
       <h1>EU {eu} shoes</h1>
-      <p>UK {fmt(s.uk)} · US {fmt(s.us)} · foot length about {fmt(s.cm)} cm. Fit changes by brand, so check each pair's own size.</p>
+      <p>
+        {has(s.uk)
+          ? <>On the Nike chart this is UK {s.uk}, US {s.us}, foot length about {s.cm} cm. Other brands can differ by half a size, so check each pair's own size. <a class="link" href="/size-guide/">Size guide</a></>
+          : <>Check each pair's own size, because fit changes by brand. <a class="link" href="/size-guide/">Size guide</a></>}
+      </p>
     </div>
 
     <div class="pills" aria-label="Exact size">

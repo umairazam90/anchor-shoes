@@ -1,0 +1,58 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import { settings, waLink } from "../lib/shop";
+
+const days = settings.returnWindowDays;
+const help = waLink("Hi Anchor Shoes, I need help with an order.");
+---
+
+<Base title="Return policy" description="Our return and exchange policy for pre-loved shoes.">
+  <div class="page">
+    <Crumbs trail={[{ label: "Return policy" }]} />
+    <div class="prose">
+      <h1>Return policy</h1>
+      <p>Every pair we sell is pre-loved and one of a kind. We describe each one honestly, with real photos, a condition score out of 10 and every flaw written down. This page explains what happens if something is not right.</p>
+
+      <h2>When you can return or exchange</h2>
+      <ul>
+        <li>The pair is different from the photos or the description, for example a wrong pair or a wrong size.</li>
+        <li>The pair has a flaw that was not shown in the photos or written in the description.</li>
+        <li>The parcel arrives damaged.</li>
+      </ul>
+
+      <h2>What we cannot take back</h2>
+      <ul>
+        <li>A change of mind, or a pair that does not suit you.</li>
+        <li>Flaws that are shown in the photos or written in the description.</li>
+        <li>Pairs that have been worn, washed or changed after delivery.</li>
+        <li>Fit differences between brands. Check the <a href="/size-guide/">size guide</a> and ask us before you order if you are unsure.</li>
+      </ul>
+
+      <h2>How to ask for a return or exchange</h2>
+      <ol class="plain">
+        <li>Message us on WhatsApp within {days} days of delivery.</li>
+        <li>Send clear photos or a short video that show the problem, along with the name and phone number on your order.</li>
+        <li>We will reply and, if the pair qualifies, tell you how to send it back.</li>
+      </ol>
+      <p style="margin-top:14px">
+        {help
+          ? <a class="btn" href={help} rel="noopener">Message us on WhatsApp</a>
+          : <a class="btn" href="/contact/">Contact us</a>}
+      </p>
+
+      <h2>Exchange or refund</h2>
+      <p>If a pair qualifies, we offer an exchange for another pair if one is available, or a refund of the price of the pair.</p>
+
+      <h2>Delivery charges</h2>
+      <p>Delivery charges are paid in advance and are not refunded, unless the return is because of our mistake, such as a wrong or misdescribed pair.</p>
+
+      <h2>Condition of returned pairs</h2>
+      <p>Pairs must come back in the same condition as delivered: unworn, with the same laces and in the same box or bag.</p>
+
+      <div class="notice" style="margin-top:28px">
+        <p><b>Not sure about a pair?</b> Ask us before you order. We are happy to send more photos or the measured length of the insole.</p>
+      </div>
+    </div>
+  </div>
+</Base>

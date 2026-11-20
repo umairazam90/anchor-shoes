@@ -4,10 +4,10 @@ import Crumbs from "../components/Crumbs.astro";
 import { settings, waDigits } from "../lib/shop";
 ---
 
-<Base title="Checkout" description="Place your order. Cash on delivery, sent by TCS.">
+<Base title="Checkout" description="Place your order. Cash on delivery.">
   <div class="page" data-checkout data-wa={waDigits()} data-brand={settings.brand}>
     <Crumbs trail={[{ label: "Cart", href: "/cart/" }, { label: "Checkout" }]} />
-    <div class="pagehead"><h1>Checkout</h1><p>Enter your delivery details. We call you to confirm before anything is sent.</p></div>
+    <div class="pagehead"><h1>Order details</h1><p>Enter your delivery details to place your order.</p></div>
 
     <div class="empty" data-empty hidden>
       <p>Your cart is empty.</p>
@@ -35,19 +35,21 @@ import { settings, waDigits } from "../lib/shop";
 
         <div class="panel">
           <h2>Payment</h2>
-          <div class="pay"><input type="radio" checked disabled aria-label="Cash on delivery" /><div><b>Cash on delivery</b><span>Pay the TCS rider when the parcel arrives.</span></div></div>
+          <div class="pay"><input type="radio" checked disabled aria-label="Cash on delivery" /><div><b>Cash on delivery</b><span>Pay for the pair in cash when the parcel arrives.</span></div></div>
+          <div class="notice" style="margin:12px 0 0"><b>Delivery charges are paid in advance.</b> They are not part of the cash you pay on delivery. We confirm the amount with you when we confirm your order.</div>
         </div>
 
         <div class="notice" data-notice hidden></div>
         <button class="btn btn--block" type="submit" style="margin-top:14px">Place order</button>
+        <p class="small muted" style="margin-top:10px">By placing your order you agree to our <a href="/returns/">return policy</a>.</p>
       </form>
 
       <aside class="summary">
         <h2>Your order</h2>
         <div class="cart-lines" data-lines></div>
         <div class="row"><span>Subtotal</span><b data-subtotal></b></div>
-        <div class="row"><span>Delivery</span><span class="muted">Confirmed on call</span></div>
-        <div class="row total"><span>Total to pay</span><b data-total></b></div>
+        <div class="row"><span>Delivery charges</span><span class="muted">{settings.deliveryFee ? `${settings.deliveryFee}, paid in advance` : "Paid in advance"}</span></div>
+        <div class="row total"><span>Pay on delivery</span><b data-total></b></div>
       </aside>
     </div>
   </div>
@@ -130,8 +132,8 @@ import { settings, waDigits } from "../lib/shop";
       ...(d.email.trim() ? [`Email: ${d.email.trim()}`] : []),
       "",
       ...live.map((p, i) => `${i + 1}. ${p.name} (EU ${p.eu}) - ${rs(p.price)}`),
-      `Total: ${rs(total)} plus delivery`,
-      "Payment: cash on delivery",
+      `Pay on delivery (cash): ${rs(total)}`,
+      "Delivery charges: to be paid in advance",
       ...(d.notes.trim() ? [`Notes: ${d.notes.trim()}`] : []),
     ].join("\n");
 
@@ -141,7 +143,7 @@ import { settings, waDigits } from "../lib/shop";
     if (wa) {
       const url = `https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
       done.innerHTML = `<h2>One last step</h2>
-        <p>Send the message below in WhatsApp. We will call you to confirm your order.</p>
+        <p>Send the message below in WhatsApp. We will confirm your order and the delivery charges with you there.</p>
         <div class="msgbox">${esc(msg)}</div>
         <p><a class="btn" href="${esc(url)}" target="_blank" rel="noopener">Open WhatsApp</a></p>
         <p class="small"><a class="link" href="/">Back to the shop</a></p>`;

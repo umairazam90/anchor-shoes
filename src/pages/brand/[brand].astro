@@ -1,0 +1,42 @@
+---
+import Base from "../../layouts/Base.astro";
+import Crumbs from "../../components/Crumbs.astro";
+import ShopGrid from "../../components/ShopGrid.astro";
+import { allBrands, productsOfBrand, waLink, type Brand } from "../../lib/shop";
+
+export function getStaticPaths() {
+  return allBrands().map((b) => ({ params: { brand: b.slug }, props: { brand: b } }));
+}
+const { brand } = Astro.props as { brand: Brand };
+const items = productsOfBrand(brand.slug);
+const others = allBrands().filter((b) => b.slug !== brand.slug);
+const ask = waLink(`Hi Anchor Shoes, I am looking for ${brand.name} shoes in size ___.`);
+---
+
+<Base title={`${brand.name} shoes`} nav="brands" description={`Pre-loved ${brand.name} shoes with photos, condition and price. Pick your size. Cash on delivery.`}>
+  <div class="page">
+    <Crumbs trail={[{ label: "Shop by brand", href: "/brands/" }, { label: brand.name }]} />
+    <div class="pagehead">
+      <h1>{brand.name}</h1>
+      <p>{brand.open} {brand.open === 1 ? "pair" : "pairs"} available. Pick a size below or browse everything.</p>
+    </div>
+
+    {others.length > 0 && (
+      <div class="pills" aria-label="Other brands">
+        <a class="pill" href="/brands/">All brands</a>
+        <span class="pill" aria-current="page">{brand.name}</span>
+        {others.map((b) => <a class="pill" href={`/brand/${b.slug}/`}>{b.name} <small>{b.open}</small></a>)}
+      </div>
+    )}
+
+    <ShopGrid products={items} sizeBar />
+
+    <div class="cta-band">
+      <div>
+        <h2>Looking for a different size?</h2>
+        <p>New pairs are added often. Message us your size and we will tell you when a {brand.name} pair comes in.</p>
+      </div>
+      {ask ? <a class="btn" href={ask} rel="noopener">Message us on WhatsApp</a> : <a class="btn" href="/contact/">Contact us</a>}
+    </div>
+  </div>
+</Base>

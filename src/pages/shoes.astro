@@ -2,7 +2,9 @@
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import ShopGrid from "../components/ShopGrid.astro";
-import { allCategories, allProducts, productsIn } from "../lib/shop";
+import { allCategories, allProducts, allBrands, productsIn } from "../lib/shop";
+
+const brands = allBrands();
 ---
 
 <Base title="All shoes" nav="all" description="Every pair at Anchor Shoes, with size, condition and price. Filter by size, brand and price.">
@@ -12,8 +14,13 @@ import { allCategories, allProducts, productsIn } from "../lib/shop";
       <h1>All shoes</h1>
       <p>Each pair is one of a kind. Filter by size, brand, price or condition.</p>
     </div>
+    <p class="pills-label">Shop by size</p>
     <div class="pills">
       {allCategories.map((c) => <a class="pill" href={`/size/${c.slug}/`}>{c.label} <small>{productsIn(c).filter((p) => p.status === "available").length}</small></a>)}
+    </div>
+    <p class="pills-label">Shop by brand</p>
+    <div class="pills">
+      {brands.map((b) => <a class="pill" href={`/brand/${b.slug}/`}>{b.name} <small>{b.open}</small></a>)}
     </div>
     <ShopGrid products={allProducts} />
   </div>

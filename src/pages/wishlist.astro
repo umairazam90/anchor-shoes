@@ -21,7 +21,8 @@ import Crumbs from "../components/Crumbs.astro";
   const root = document.querySelector<HTMLElement>("[data-wishlist]")!;
   const out = root.querySelector<HTMLElement>("[data-results]")!;
   const empty = root.querySelector<HTMLElement>("[data-empty]")!;
-  let shown = "";
+  // null (not "") so the empty-state message also renders on the first load when nothing is saved
+  let shown: string | null = null;
 
   async function render() {
     const slugs = getWish();

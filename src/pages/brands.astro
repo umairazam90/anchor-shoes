@@ -1,0 +1,30 @@
+---
+import Base from "../layouts/Base.astro";
+import Crumbs from "../components/Crumbs.astro";
+import { allBrands } from "../lib/shop";
+
+const brands = allBrands();
+---
+
+<Base title="Shop by brand" nav="brands" description="Browse pre-loved shoes by brand, then pick your size. Real photos, honest condition, cash on delivery.">
+  <div class="page">
+    <Crumbs trail={[{ label: "Shop by brand" }]} />
+    <div class="pagehead">
+      <h1>Shop by brand</h1>
+      <p>Pick a brand, then choose your size.</p>
+    </div>
+
+    {brands.length > 0
+      ? (
+        <div class="tiles">
+          {brands.map((b) => (
+            <a class="tile" href={`/brand/${b.slug}/`}>
+              <span class="tile__img">{b.photo && <img src={b.photo} alt="" width="640" height="800" loading="lazy" />}</span>
+              <span class="tile__txt"><b>{b.name}</b><span>{b.open === 0 ? "None right now" : `${b.open} ${b.open === 1 ? "pair" : "pairs"}`}</span></span>
+            </a>
+          ))}
+        </div>
+      )
+      : <p class="empty">New pairs are being added. Please check again soon.</p>}
+  </div>
+</Base>

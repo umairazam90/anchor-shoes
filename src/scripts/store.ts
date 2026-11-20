@@ -23,7 +23,11 @@ export const rs = (n: number) => "Rs " + new Intl.NumberFormat("en-PK").format(n
 
 let _cat: Promise<Item[]> | null = null;
 export function catalog(): Promise<Item[]> {
-  return (_cat ??= fetch("/catalog.json").then((r) => r.json()).then((d) => d.items as Item[]).catch(() => []));
+  // a failed request is not cached, so a brief network drop does not leave the cart blank until the page is reloaded
+  return (_cat ??= fetch("/catalog.json")
+    .then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+    .then((d) => d.items as Item[])
+    .catch(() => { _cat = null; return [] as Item[]; }));
 }
 
 export const getCart = () => read<string[]>(K.cart, []);
@@ -190,6 +194,18 @@ if (ann) {
     }
   } catch { /* keep the first message */ }
 }
+
+// Drop cart and saved entries for pairs that no longer exist (deleted from the catalogue), so the badges
+// never count something the customer cannot see. Skipped when the catalogue could not be loaded.
+catalog().then((items) => {
+  if (items.length === 0) return;
+  const known = new Set(items.map((i) => i.slug));
+  const cart = getCart(), wish = getWish();
+  const cleanCart = cart.filter((s) => known.has(s)), cleanWish = wish.filter((s) => known.has(s));
+  if (cleanCart.length !== cart.length) write(K.cart, cleanCart);
+  if (cleanWish.length !== wish.length) write(K.wish, cleanWish);
+  if (cleanCart.length !== cart.length || cleanWish.length !== wish.length) emit();
+});
 
 setPanel("");
 syncState();

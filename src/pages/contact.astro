@@ -2,18 +2,19 @@
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import Icon from "../components/Icon.astro";
-import { settings, waLink, waDigits } from "../lib/shop";
+import { settings, waLink, waDigits, telHref } from "../lib/shop";
 
 const wa = waLink("Hi Anchor Shoes, I have a question.");
+const tel = telHref();
 const socials = [
   { label: "Instagram", href: settings.instagram },
   { label: "TikTok", href: settings.tiktok },
   { label: "Facebook", href: settings.facebook },
 ].filter((s) => s.href);
-const any = !!(wa || settings.phone || settings.email || settings.address || settings.hours || socials.length);
+const any = !!(wa || tel || settings.email || settings.address || settings.pickup || settings.hours || socials.length);
 ---
 
-<Base title="Contact us" nav="contact" description="Contact Anchor Shoes by WhatsApp, phone or message.">
+<Base title="Contact us" nav="contact" description="Contact Anchor Shoes by WhatsApp or phone, or send us a message.">
   <div class="page" data-contact data-wa={waDigits()} data-email={settings.email}>
     <Crumbs trail={[{ label: "Contact us" }]} />
     <div class="pagehead"><h1>Contact us</h1><p>Questions about a pair, your size or your order? We reply as soon as we can.</p></div>
@@ -21,20 +22,22 @@ const any = !!(wa || settings.phone || settings.email || settings.address || set
     <div class="layout2">
       <div>
         <div class="cards" style="grid-template-columns:1fr">
-          {wa && <a class="card-info" href={wa} rel="noopener" style="text-decoration:none"><Icon name="chat" /><div><b>WhatsApp</b><span>Message us any time</span></div></a>}
-          {settings.phone && <a class="card-info" href={`tel:${settings.phone}`} style="text-decoration:none"><Icon name="phone" /><div><b>Call us</b><span>{settings.phone}</span></div></a>}
+          {wa && <a class="card-info" href={wa} rel="noopener" style="text-decoration:none"><Icon name="chat" /><div><b>WhatsApp</b><span>{settings.whatsapp}</span></div></a>}
+          {tel && <a class="card-info" href={tel} style="text-decoration:none"><Icon name="phone" /><div><b>Call us</b><span>{settings.phone}</span></div></a>}
           {settings.email && <a class="card-info" href={`mailto:${settings.email}`} style="text-decoration:none"><Icon name="mail" /><div><b>Email</b><span>{settings.email}</span></div></a>}
           {settings.hours && <div class="card-info"><Icon name="clock" /><div><b>Hours</b><span>{settings.hours}</span></div></div>}
           {settings.address && <div class="card-info"><Icon name="pin" /><div><b>Address</b><span>{settings.address}</span></div></div>}
+          {settings.pickup && <div class="card-info"><Icon name="pin" /><div><b>Self pickup</b><span>Available on {settings.pickup}. Message us on WhatsApp to arrange a time.</span></div></div>}
           {socials.map((s) => <a class="card-info" href={s.href} rel="noopener" style="text-decoration:none"><Icon name="camera" /><div><b>{s.label}</b><span>Follow new pairs</span></div></a>)}
           {!any && <div class="card-info"><Icon name="chat" /><div><b>Contact details coming soon</b><span>Our WhatsApp and phone numbers will be shown here.</span></div></div>}
         </div>
 
         <div class="faq">
-          <details class="acc" open><summary>How do I order? <Icon name="down" size={18} /></summary><div class="acc__in"><p>Add a pair to your cart and check out. We call and message you on WhatsApp to confirm, then send it by TCS.</p></div></details>
-          <details class="acc"><summary>How do I pay? <Icon name="down" size={18} /></summary><div class="acc__in"><p>Cash on delivery. You pay the TCS rider when the parcel arrives.</p></div></details>
-          <details class="acc"><summary>How do I track my order? <Icon name="down" size={18} /></summary><div class="acc__in"><p>We send you a TCS tracking number and a link. Open the link or use the <a href="/track/">tracking page</a>.</p></div></details>
+          <details class="acc" open><summary>How do I order? <Icon name="down" size={18} /></summary><div class="acc__in"><p>Add a pair to your cart, check out with your delivery details, and we confirm your order with you.</p></div></details>
+          <details class="acc"><summary>How do I pay? <Icon name="down" size={18} /></summary><div class="acc__in"><p>You pay for the pair in cash when the parcel arrives. Delivery charges are paid in advance.</p></div></details>
+          <details class="acc"><summary>How do I track my order? <Icon name="down" size={18} /></summary><div class="acc__in"><p>We send you a tracking number and a link. Open the link or use the <a href="/track/">tracking page</a>.</p></div></details>
           <details class="acc"><summary>Are the photos of the real pair? <Icon name="down" size={18} /></summary><div class="acc__in"><p>Yes. Every pair is one of a kind, and the photos and flaws describe that exact pair.</p></div></details>
+          <details class="acc"><summary>Can I return a pair? <Icon name="down" size={18} /></summary><div class="acc__in"><p>If a pair is not as described, yes. Read our <a href="/returns/">return policy</a>.</p></div></details>
         </div>
       </div>
 

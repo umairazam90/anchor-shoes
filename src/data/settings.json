@@ -1,21 +1,23 @@
 {
   "brand": "Anchor Shoes",
   "tagline": "Pre-loved footwear",
-  "whatsapp": "",
-  "phone": "",
+  "whatsapp": "+92 311 9362391",
+  "phone": "+92 311 9362391",
   "email": "",
   "hours": "",
   "address": "",
+  "pickup": "Main Peshawar Road, Rawalpindi",
   "instagram": "",
   "tiktok": "",
   "facebook": "",
   "deliveryFee": "",
   "cities": "",
-  "returnPolicy": "",
+  "returnWindowDays": 3,
+  "returnPolicy": "If a pair is not as described, message us on WhatsApp within {days} days of delivery with photos and we will arrange an exchange or refund.",
   "tcsTrackUrl": "https://www.tcsexpress.com/",
   "announcements": [
     "Cash on delivery across Pakistan",
     "Every pair photographed as it is",
-    "Delivered by TCS"
+    "Condition rated out of 10 on every pair"
   ]
 }

@@ -3,15 +3,26 @@ import ProductCard from "./ProductCard.astro";
 import Icon from "./Icon.astro";
 import { allProducts, type Product } from "../lib/shop";
 
-interface Props { products: Product[] }
-const { products } = Astro.props;
+/** sizeBar: show the EU size pills above the grid (used on brand pages) instead of inside the filters */
+interface Props { products: Product[]; sizeBar?: boolean }
+const { products, sizeBar = false } = Astro.props;
 // newest first: products.json is in the order pairs were added
 const list = [...products].sort((a, b) => allProducts.indexOf(b) - allProducts.indexOf(a));
 const brands = [...new Set(list.map((p) => p.brand))].sort();
 const sizes = [...new Set(list.map((p) => p.size.eu))].sort((a, b) => a - b);
+// the size bar only offers sizes that have a pair for sale (sold-out sizes would just show "no pairs match")
+const barSizes = [...new Set(list.filter((p) => p.status === "available").map((p) => p.size.eu))].sort((a, b) => a - b);
 ---
 
 <div data-shop>
+  {sizeBar && barSizes.length > 1 && (
+    <div class="sizebar">
+      <span class="sizebar__label">Shop by size (EU)</span>
+      <div class="pills" data-f="size">
+        {barSizes.map((s) => <button class="pill" type="button" aria-pressed="false" data-val={s}>EU {s}</button>)}
+      </div>
+    </div>
+  )}
   <div class="toolbar">
     <div class="toolbar__l">
       <button class="btn btn--line btn--filter" type="button" data-filter-open aria-controls="filters">Filters</button>
@@ -36,7 +47,7 @@ const sizes = [...new Set(list.map((p) => p.size.eu))].sort((a, b) => a - b);
         <button class="icon-btn" type="button" data-filter-close aria-label="Close filters"><Icon name="x" /></button>
       </div>
       <div class="filters__body">
-        {sizes.length > 1 && (
+        {!(sizeBar && barSizes.length > 1) && sizes.length > 1 && (
           <div class="fgroup">
             <h3>Size (EU)</h3>
             <div class="pills" data-f="size">

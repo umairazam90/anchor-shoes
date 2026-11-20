@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
 import ProductCard from "../components/ProductCard.astro";
-import { allCategories, allProducts, available, productsIn, waLink, settings } from "../lib/shop";
+import { allCategories, allProducts, allBrands, available, productsIn, waLink, settings } from "../lib/shop";
 
 const fresh = [...available()].reverse();
 const hero = fresh.slice(0, 3);
@@ -12,6 +12,7 @@ const tiles = allCategories.map((c) => {
   const open = items.filter((p) => p.status === "available");
   return { ...c, n: open.length, img: (open[0] ?? items[0])?.photos[0] };
 });
+const brands = allBrands();
 const ask = waLink("Hi Anchor Shoes, I am looking for a pair in size ___.");
 ---
 
@@ -24,12 +25,12 @@ const ask = waLink("Hi Anchor Shoes, I am looking for a pair in size ___.");
         <p class="lead">Real photos of the exact pair, the condition out of 10, and every flaw written down. Pay cash when it arrives.</p>
         <div class="hero__cta">
           <a class="btn btn--brass" href="#sizes">Shop by size</a>
-          <a class="btn btn--line" href="/shoes/">See all shoes</a>
+          <a class="btn btn--line" href="/brands/">Shop by brand</a>
         </div>
       </div>
       {hero.length >= 3 && (
         <div class="mosaic" aria-hidden="true">
-          {hero.map((p) => <img src={p.photos[0]} alt="" width="640" height="800" />)}
+          {hero.map((p) => <div class="mosaic__i"><img src={p.photos[0]} alt="" width="640" height="800" /></div>)}
         </div>
       )}
     </div>
@@ -37,9 +38,9 @@ const ask = waLink("Hi Anchor Shoes, I am looking for a pair in size ___.");
 
   <div class="features">
     <div class="feat"><Icon name="truck" /><div><b>Cash on delivery</b><span>Pay when the parcel arrives</span></div></div>
-    <div class="feat"><Icon name="package" /><div><b>Sent by TCS</b><span>With a tracking number</span></div></div>
     <div class="feat"><Icon name="camera" /><div><b>Real photos</b><span>Of the exact pair you get</span></div></div>
-    <div class="feat"><Icon name="phone" /><div><b>We call you first</b><span>To confirm before sending</span></div></div>
+    <div class="feat"><Icon name="shield" /><div><b>Honest condition</b><span>Rated out of 10, flaws listed</span></div></div>
+    <div class="feat"><Icon name="package" /><div><b>Return policy</b><span>If a pair is not as described</span></div></div>
   </div>
 
   <div class="page">
@@ -48,12 +49,26 @@ const ask = waLink("Hi Anchor Shoes, I am looking for a pair in size ___.");
       <div class="tiles">
         {tiles.map((t) => (
           <a class={`tile ${t.n === 0 && !t.img ? "tile--empty" : ""}`} href={`/size/${t.slug}/`}>
-            {t.img && <img src={t.img} alt="" width="640" height="800" loading="lazy" />}
-            <div class="tile__txt"><b>{t.label}</b><span>{t.n === 0 ? "None right now" : `${t.n} ${t.n === 1 ? "pair" : "pairs"} · ${t.blurb}`}</span></div>
+            <span class="tile__img">{t.img && <img src={t.img} alt="" width="640" height="800" loading="lazy" />}</span>
+            <span class="tile__txt"><b>{t.label}</b><span>{t.n === 0 ? "None right now" : `${t.n} ${t.n === 1 ? "pair" : "pairs"} · ${t.blurb}`}</span></span>
           </a>
         ))}
       </div>
     </section>
+
+    {brands.length > 0 && (
+      <section class="section" id="brands">
+        <div class="section__head"><h2>Shop by brand</h2><a class="link" href="/brands/">All brands</a></div>
+        <div class="tiles">
+          {brands.map((b) => (
+            <a class="tile" href={`/brand/${b.slug}/`}>
+              <span class="tile__img">{b.photo && <img src={b.photo} alt="" width="640" height="800" loading="lazy" />}</span>
+              <span class="tile__txt"><b>{b.name}</b><span>{b.open === 0 ? "None right now" : `${b.open} ${b.open === 1 ? "pair" : "pairs"}`}</span></span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
 
     <section class="section">
       <div class="section__head"><h2>New arrivals</h2><a class="link" href="/shoes/">View all</a></div>
@@ -66,8 +81,8 @@ const ask = waLink("Hi Anchor Shoes, I am looking for a pair in size ___.");
       <div class="section__head"><h2>How it works</h2></div>
       <ol class="steps">
         <li><b>Pick your pair</b><span>Choose your size, check the photos and the condition, then add it to your cart.</span></li>
-        <li><b>We call you</b><span>We confirm your order by phone and WhatsApp before anything is sent.</span></li>
-        <li><b>Pay on delivery</b><span>TCS brings it to your door. You get a tracking number to follow it.</span></li>
+        <li><b>Confirm the order</b><span>Enter your delivery details and place your order.</span></li>
+        <li><b>Pay on delivery</b><span>Pay cash when your parcel arrives.</span></li>
       </ol>
     </section>
 

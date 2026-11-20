@@ -5,17 +5,19 @@ import "@fontsource/poppins/600.css";
 import "@fontsource/poppins/700.css";
 import "../styles/global.css";
 import Icon from "../components/Icon.astro";
-import { settings, previewNotes, allCategories, productsIn, waLink } from "../lib/shop";
+import { settings, previewNotes, allCategories, productsIn, allBrands, waLink, telHref } from "../lib/shop";
 
 interface Props {
   title?: string;
   description?: string;
-  nav?: "shop" | "all" | "sizes" | "track" | "contact" | "";
+  nav?: "shop" | "brands" | "all" | "sizes" | "track" | "contact" | "";
 }
-const { title, description = "Pre-loved shoes in Pakistan. Real photos, honest condition, cash on delivery with TCS.", nav = "" } = Astro.props;
+const { title, description = "Pre-loved shoes in Pakistan. Real photos, honest condition, cash on delivery.", nav = "" } = Astro.props;
 const fullTitle = title ? `${title} | ${settings.brand}` : `${settings.brand}: pre-loved shoes, cash on delivery`;
 const notes = previewNotes();
 const cats = allCategories.map((c) => ({ ...c, n: productsIn(c).filter((p) => p.status === "available").length }));
+const brands = allBrands();
+const tel = telHref();
 const wa = waLink("Hi Anchor Shoes, I have a question.");
 const socials = [
   { label: "Instagram", href: settings.instagram },
@@ -57,6 +59,12 @@ const socials = [
               {cats.map((c) => <a href={`/size/${c.slug}/`}><span>{c.label}</span><small>{c.n} {c.n === 1 ? "pair" : "pairs"}</small></a>)}
             </div>
           </div>
+          <div class="drop">
+            <a href="/brands/" aria-current={nav === "brands" ? "page" : undefined}>Shop by brand</a>
+            <div class="drop__panel">
+              {brands.map((b) => <a href={`/brand/${b.slug}/`}><span>{b.name}</span><small>{b.open} {b.open === 1 ? "pair" : "pairs"}</small></a>)}
+            </div>
+          </div>
           <a href="/shoes/" aria-current={nav === "all" ? "page" : undefined}>All shoes</a>
           <a href="/size-guide/" aria-current={nav === "sizes" ? "page" : undefined}>Size guide</a>
           <a href="/track/" aria-current={nav === "track" ? "page" : undefined}>Track order</a>
@@ -80,16 +88,19 @@ const socials = [
         <div class="ftr__grid">
           <div>
             <img src="/brand/logo-header-reversed.svg" alt={settings.brand} width="210" height="40" />
-            <p>Pre-loved shoes, photographed as they are. We call to confirm every order, then ship by TCS with cash on delivery.</p>
+            <p>Pre-loved shoes, photographed as they are. Cash on delivery across Pakistan.</p>
           </div>
           <div>
             <h3>Shop by size</h3>
             <ul>{cats.map((c) => <li><a href={`/size/${c.slug}/`}>{c.label}</a></li>)}<li><a href="/shoes/">All shoes</a></li></ul>
+            <h3 style="margin-top:18px">Shop by brand</h3>
+            <ul>{brands.map((b) => <li><a href={`/brand/${b.slug}/`}>{b.name}</a></li>)}</ul>
           </div>
           <div>
             <h3>Help</h3>
             <ul>
               <li><a href="/size-guide/">Size guide</a></li>
+              <li><a href="/returns/">Return policy</a></li>
               <li><a href="/track/">Track your order</a></li>
               <li><a href="/contact/">Contact us</a></li>
               <li><a href="/account/">Your account</a></li>
@@ -98,17 +109,17 @@ const socials = [
           <div>
             <h3>Talk to us</h3>
             <ul>
-              {wa && <li><a href={wa} rel="noopener">WhatsApp</a></li>}
-              {settings.phone && <li><a href={`tel:${settings.phone}`}>{settings.phone}</a></li>}
+              {wa && <li><a href={wa} rel="noopener">WhatsApp {settings.whatsapp}</a></li>}
+              {tel && <li><a href={tel}>Call {settings.phone}</a></li>}
               {settings.email && <li><a href={`mailto:${settings.email}`}>{settings.email}</a></li>}
               {socials.map((s) => <li><a href={s.href} rel="noopener">{s.label}</a></li>)}
-              {!wa && !settings.phone && !settings.email && <li><a href="/contact/">Contact details</a></li>}
+              {!wa && !tel && !settings.email && <li><a href="/contact/">Contact details</a></li>}
             </ul>
           </div>
         </div>
         <div class="ftr__bar">
           <span>© {new Date().getFullYear()} {settings.brand}</span>
-          <div class="chipset"><span>Cash on delivery</span><span>TCS</span></div>
+          <div class="chipset"><span>Cash on delivery</span></div>
         </div>
       </div>
     </footer>
@@ -123,9 +134,14 @@ const socials = [
           {cats.map((c) => <a href={`/size/${c.slug}/`}><span>{c.label}</span><small>{c.n} {c.n === 1 ? "pair" : "pairs"}</small></a>)}
           <a href="/shoes/"><span>All shoes</span><Icon name="right" size={18} /></a>
         </div>
+        <p class="menu-title">Shop by brand</p>
+        <div class="menu-list">
+          {brands.map((b) => <a href={`/brand/${b.slug}/`}><span>{b.name}</span><small>{b.open} {b.open === 1 ? "pair" : "pairs"}</small></a>)}
+        </div>
         <p class="menu-title">Help</p>
         <div class="menu-list">
           <a href="/size-guide/"><span>Size guide</span></a>
+          <a href="/returns/"><span>Return policy</span></a>
           <a href="/track/"><span>Track order</span></a>
           <a href="/contact/"><span>Contact us</span></a>
           <a href="/account/"><span>Your account</span></a>
@@ -139,7 +155,7 @@ const socials = [
       <div class="drawer__body" data-cart-items></div>
       <div class="drawer__foot" data-cart-foot hidden>
         <div class="row"><span>Subtotal</span><b data-cart-subtotal></b></div>
-        <p class="small muted">Delivery fee is confirmed when we call you. Pay cash on delivery.</p>
+        <p class="small muted">Delivery charges are paid in advance. The price of the pair is paid in cash on delivery.</p>
         <a class="btn btn--block" href="/checkout/">Checkout</a>
         <a class="btn btn--line btn--block" href="/cart/">View cart</a>
       </div>
