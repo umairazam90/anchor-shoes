@@ -25,7 +25,6 @@ Until sign-in is connected, `/admin/` shows "Admin sign-in is not set up yet" an
    - In `wrangler.jsonc` change the two lines to:
      `"d1_databases": [{ "binding": "DB", "database_name": "anchor-shoes-db", "database_id": "<the ID>" }]`
      `"r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "anchor-shoes-photos" }]`
-3. The Astro adapter also adds one empty "SESSION" key-value store. It is unused and free; leave it.
 
 ## Step 2: sign-in (Cloudflare Access)
 
