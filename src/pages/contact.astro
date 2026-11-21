@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import Icon from "../components/Icon.astro";
-import { settings, waLink, waDigits, telHref } from "../lib/shop";
+const { settings, waLink, waDigits, telHref } = Astro.locals.shop;
 
 const wa = waLink("Hi Anchor Shoes, I have a question.");
 const tel = telHref();

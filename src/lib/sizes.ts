@@ -73,7 +73,7 @@ export type SizeRow = { eu: number; uk: number; us: number; cm: number };
 
 export function fullSize(s: ProductSize, brand = ""): SizeRow {
   const key = chartKeyFor(brand);
-  const r = key ? CHARTS[key].rows.find((x) => Math.abs(x.eu - s.eu) < 0.001) : undefined;
+  const r = key ? CHARTS[key].rows.find((x) => Math.abs(x.eu - s.eu) < 0.01) : undefined;
   return {
     eu: s.eu,
     uk: s.uk ?? r?.uk ?? NaN,
@@ -84,3 +84,23 @@ export function fullSize(s: ProductSize, brand = ""): SizeRow {
 
 export const fmt = (n: number) => (Number.isNaN(n) ? "-" : String(n));
 export const has = (n: number) => !Number.isNaN(n);
+
+/* ---------- EU size text ---------- */
+/** EU size the way it is printed on the shoe: 42, 42.5 or "42 2/3" (adidas sells in thirds). */
+export function euText(n: number): string {
+  const whole = Math.floor(n + 1e-6);
+  const f = n - whole;
+  if (Math.abs(f - 1 / 3) < 0.02) return `${whole} 1/3`;
+  if (Math.abs(f - 2 / 3) < 0.02) return `${whole} 2/3`;
+  return String(Math.round(n * 100) / 100);
+}
+
+/** Reads what a person types: 42, 42.5, 42,5, "42 2/3" or "42-2/3". Returns NaN when it is not a sensible EU size. */
+export function parseEu(text: string): number {
+  const t = String(text ?? "").trim().replace(",", ".").replace(/^eu\s*/i, "");
+  const third = /^(\d{2})[\s-]+([12])\s*\/\s*3$/.exec(t);
+  if (third) return Number(third[1]) + Number(third[2]) / 3;
+  if (!/^\d{2}(\.\d{1,2})?$/.test(t)) return NaN;
+  const n = Number(t);
+  return n >= 30 && n <= 55 ? n : NaN;
+}

@@ -1,13 +1,13 @@
 ---
+import { euText } from "../../../lib/sizes";
 import Base from "../../../layouts/Base.astro";
 import Crumbs from "../../../components/Crumbs.astro";
 import ShopGrid from "../../../components/ShopGrid.astro";
-import { allCategories, productsIn, sizesIn, sizeSlug, waLink, type Category } from "../../../lib/shop";
+import { sizeSlug } from "../../../lib/shop";
 
-export function getStaticPaths() {
-  return allCategories.map((c) => ({ params: { range: c.slug }, props: { cat: c } }));
-}
-const { cat } = Astro.props as { cat: Category };
+const { allCategories, productsIn, sizesIn, waLink } = Astro.locals.shop;
+const cat = allCategories.find((c) => c.slug === Astro.params.range);
+if (!cat) return Astro.rewrite("/404/");
 const items = productsIn(cat);
 const sizes = sizesIn(cat);
 const count = (eu: number) => items.filter((p) => p.size.eu === eu && p.status === "available").length;
@@ -25,7 +25,7 @@ const ask = waLink(`Hi Anchor Shoes, I am looking for a pair in size EU ${cat.fr
     {sizes.length > 0 && (
       <div class="pills" aria-label="Exact size">
         <a class="pill" href={`/size/${cat.slug}/`} aria-current="page">All {cat.label}</a>
-        {sizes.map((eu) => <a class="pill" href={`/size/${cat.slug}/${sizeSlug(eu)}/`}>EU {eu} <small>{count(eu)}</small></a>)}
+        {sizes.map((eu) => <a class="pill" href={`/size/${cat.slug}/${sizeSlug(eu)}/`}>EU {euText(eu)} <small>{count(eu)}</small></a>)}
       </div>
     )}
 

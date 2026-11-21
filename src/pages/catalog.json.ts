@@ -1,8 +1,7 @@
-import { catalogItems } from "../lib/shop";
+import type { APIRoute } from "astro";
 
-// Read by the cart, search and saved-pairs scripts. Becomes a live endpoint when pairs move to D1.
-export function GET() {
-  return new Response(JSON.stringify({ items: catalogItems() }), {
+// Read by the cart, search and saved-pairs scripts. Always live: it comes straight from the database.
+export const GET: APIRoute = ({ locals }) =>
+  new Response(JSON.stringify({ items: locals.shop.catalogItems() }), {
     headers: { "content-type": "application/json", "cache-control": "no-cache" },
   });
-}

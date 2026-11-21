@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
-import { allProducts } from "../lib/shop";
+const { allProducts } = Astro.locals.shop;
 
 const brands = [...new Set(allProducts.map((p) => p.brand))].sort();
 ---
