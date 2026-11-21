@@ -1,0 +1,64 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import { safeNext } from "../../lib/adminauth";
+
+const next = safeNext(Astro.url.searchParams.get("next"));
+// Already signed in (for example through Cloudflare Access): nothing to do here.
+if (Astro.locals.admin) return Astro.redirect(next, 303);
+
+const MESSAGES: Record<string, { kind: "err" | "ok"; text: string }> = {
+  bad: { kind: "err", text: "That email and password do not match. Please check them and try again." },
+  form: { kind: "err", text: "Please type your email and your password." },
+  locked: { kind: "err", text: "Too many wrong tries. For safety, please wait 15 minutes and try again." },
+  down: { kind: "err", text: "The admin could not reach its database just now. Please try again in a minute." },
+  out: { kind: "ok", text: "You are signed out." },
+};
+const note = MESSAGES[Astro.url.searchParams.get("e") ?? ""];
+---
+
+<Admin title="Sign in" bare>
+  <div class="adm-login">
+    <h1>Sign in</h1>
+    <p class="muted">Admin of Anchor Shoes. Use the email and password you set up.</p>
+
+    {note && <p class={`adm-msg adm-msg--${note.kind}`} role={note.kind === "err" ? "alert" : "status"}>{note.text}</p>}
+
+    <form method="post" action="/api/admin/login/" class="adm-form" data-login>
+      <input type="hidden" name="next" value={next} />
+      <div class="field">
+        <label class="lbl" for="l-email">Email</label>
+        <input id="l-email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+      </div>
+      <div class="field">
+        <label class="lbl" for="l-pass">Password</label>
+        <div class="adm-pw">
+          <input id="l-pass" name="password" type="password" autocomplete="current-password" required maxlength="200" />
+          <button type="button" class="adm-link" data-showpw aria-controls="l-pass" hidden>Show</button>
+        </div>
+      </div>
+      <button class="btn btn--block" type="submit">Sign in</button>
+    </form>
+
+    <p class="adm-small"><a href="/admin/setup/">First time here, or forgot your password?</a></p>
+  </div>
+</Admin>
+
+<script>
+  // Show/hide for the password box. The form itself works without any script.
+  const btn = document.querySelector<HTMLButtonElement>("[data-showpw]");
+  const input = document.querySelector<HTMLInputElement>("#l-pass");
+  if (btn && input) {
+    btn.hidden = false;
+    btn.addEventListener("click", () => {
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.textContent = show ? "Hide" : "Show";
+    });
+  }
+  // Double taps on a slow phone connection would send the form twice (and count as two tries).
+  const form = document.querySelector<HTMLFormElement>("[data-login]");
+  form?.addEventListener("submit", () => {
+    const go = form.querySelector<HTMLButtonElement>("button[type=submit]");
+    if (go) { go.disabled = true; go.textContent = "Signing in…"; }
+  });
+</script>

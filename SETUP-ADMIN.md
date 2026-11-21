@@ -2,7 +2,7 @@
 
 The admin lives at **`/admin/`** on the shop's own address. It is where you add pairs with photos, mark pairs sold, and change shop settings (WhatsApp number, delivery charges, return policy, announcement bar). The shop reads everything live from a database, so a change shows on the shop straight away. No rebuild, no waiting.
 
-Nothing here needs a password stored on the site. You sign in with your email: Cloudflare sends a 6-digit code, you type it in.
+You sign in at **`/admin/login/`** with your email and a password you choose (see *Email and password sign-in* below). Before that was set up, sign-in was Cloudflare Access: Cloudflare emails a 6-digit code. Access still works as a spare key, but it is no longer needed.
 
 ## What is where
 
@@ -10,9 +10,9 @@ Nothing here needs a password stored on the site. You sign in with your email: C
 |---|---|
 | Pairs and settings | Cloudflare **D1** database (binding `DB`). The tables are created by the site itself on the first visit (`src/lib/db.ts`). |
 | Uploaded photos | Cloudflare **R2** bucket (binding `PHOTOS`), shown on the shop at `/img/pairs/...` |
-| Sign-in | Cloudflare **Access** (email code) in front of `/admin` and `/api/admin`. The site also checks the sign-in itself, so a mistake in the Access rule cannot open the admin. |
+| Sign-in | The site's own **email + password** login (admins and sessions are in D1). A valid **Cloudflare Access** token is also accepted, if that is still switched on. Nothing in `/admin` or `/api/admin` opens without one of the two. |
 
-Until sign-in is connected, `/admin/` shows "Admin sign-in is not set up yet" and every admin action is refused. That is the safe default, not a fault.
+Until an admin login exists (or Access is connected), nobody can get in: `/admin/` sends you to the login page and every admin action is refused. That is the safe default, not a fault.
 
 ## Step 1: first deploy (creates the database and photo storage)
 
@@ -26,7 +26,9 @@ Until sign-in is connected, `/admin/` shows "Admin sign-in is not set up yet" an
      `"d1_databases": [{ "binding": "DB", "database_name": "anchor-shoes-db", "database_id": "<the ID>" }]`
      `"r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "anchor-shoes-photos" }]`
 
-## Step 2: sign-in (Cloudflare Access)
+## Step 2: sign-in with Cloudflare Access (optional now)
+
+> Since 2026-11-21 the admin has its own email + password login (see *Email and password sign-in* below), so this step is **not needed**. Keep it only if you want the emailed code as well, or as a spare key. If you do use it, remember the shop's login page will then sit behind the code.
 
 **You need a domain on Cloudflare for this.** Cloudflare Access protects a domain and a path (`yourshop.com/admin`). On the plain `*.workers.dev` address it can only protect the *whole* site, which would lock out your customers. So the order is: buy the domain → add it to Cloudflare → attach it to this Worker → do the steps below. (Owner decision pending: see the open items in `CLAUDE.md`.)
 
@@ -47,6 +49,26 @@ Dashboard labels move around a little; the idea stays the same.
    ```
 6. Test in a private browser window: `yourshop.com/admin/` must ask for your email and a code, and `yourshop.com/api/admin/pairs/` must do the same. Without signing in, nothing should load.
 
+## Email and password sign-in
+
+**How it works.** `/admin/login/` asks for an email and a password. Passwords are never stored: only a salted hash (PBKDF2-SHA256). The browser gets a random session cookie (14 days, HttpOnly); the database keeps only a hash of it. After 8 wrong tries on one email (or 15 from one phone/network) in 15 minutes the sign-in is locked for the rest of that window, even for the right password. Wait 15 minutes.
+
+**Switching over from the emailed code** (do these in order; nothing breaks until step 4):
+
+1. **Add the setup secret.** Cloudflare dashboard → **Workers & Pages** → `anchor-shoes` → **Settings** → **Variables and Secrets** → **Add**. Type **Secret**, name `SETUP_CODE`, value: a long phrase only you know (at least 16 characters, for example four random words). Save and deploy. Keep a copy in your password manager. This code is the key to creating or resetting logins, so do not share it.
+2. **Create your login.** Open `https://anchor-shoes.<your-name>.workers.dev/admin/setup/` (the plain Workers address: Access does not cover it, so it opens straight away). Type your email, choose a password (10+ characters; a few words with spaces is fine), type the setup code, **Save and sign in**.
+3. **Test it.** Use **Sign out** (bottom of any admin page), then sign in again with the email and password. Add a second admin if someone helps you: *Logins and password* (bottom of any admin page) → *Add an admin*.
+4. **Turn off the emailed code for the real domain.** Cloudflare dashboard → **Zero Trust** → **Access controls** → **Applications** → open the application for the shop → **Delete** (or remove the two destinations `anchorshoes.com/admin` and `anchorshoes.com/api/admin`). From then on `anchorshoes.com/admin/` shows the login page instead of asking for a code. Sign in there once with your email and password (the cookie is separate per address).
+5. **Optional, once it works everywhere:** remove the `SETUP_CODE` secret. The setup page then switches itself off, so a leaked code can never matter. Add it back whenever you need to reset a password.
+
+**Forgot your password?** Add `SETUP_CODE` (step 1) if it is not there, open `/admin/setup/`, type your email, a new password and the code. The old password stops working and every phone and computer is signed out. There is no "email me a link" yet; nothing sends email until the alerts work (M3 phase B).
+
+**Change your password / add or remove admins:** *Logins and password* (bottom of any admin page). Changing your password signs out your other devices. You cannot remove the login you are using.
+
+**If sign-in shows a Cloudflare error page ("Worker exceeded resource limits", error 1102).** Hashing a password is deliberately slow. On the Workers **Free** plan a request may use only 10 ms of processor time and the default 100,000 rounds can go over that. Two fixes: switch the Worker to the paid Workers plan (best: no change to the password strength), or lower the rounds: Variables and Secrets → add a **variable** `PASSWORD_ITERATIONS` = `30000`, deploy, then run `/admin/setup/` again for each admin (existing passwords keep the old round count until reset). Lowering it makes a stolen database easier to crack, so use a long passphrase if you do.
+
+**Good to know.** Anyone who knows your password can sign in, so choose one you use nowhere else. Access (the emailed code) was the safer lock because there was nothing to guess; the limits and hashing above are what make the password login reasonable. If you ever want both, switch Access back on: the site accepts either.
+
 ## Daily use
 
 - **Add a pair**: Admin → *Add a pair*. Pick photos from your phone (they are shrunk automatically before upload), fill in model, brand, EU size, condition, price and flaws. The first photo is the cover; use the arrows to reorder.
@@ -64,8 +86,10 @@ Flaws are required on purpose ("None" is fine). Customers see them, and honest c
 ```
 cp .dev.vars.example .dev.vars     # signs you in as that email, on localhost only
 npm run build && npm run preview   # opens http://localhost:4321/admin/
-npm test                           # sign-in checks
+npm test                           # sign-in and password checks
 ```
+
+`http://localhost:4321/admin/` signs you in automatically (the `DEV_ADMIN_EMAIL` shortcut). To see and try the real login page, open **`http://0.0.0.0:4321/admin/`** instead: the shortcut does not apply there, and `/admin/setup/` works with the `SETUP_CODE` from `.dev.vars.example`. Stop the preview with `npx astro preview stop` (a plain Ctrl+C can leave it running).
 
 The local database and photos live in `.wrangler/state` (ignored by git). Delete that folder to start fresh.
 
@@ -73,9 +97,12 @@ The local database and photos live in `.wrangler/state` (ignored by git). Delete
 
 | You see | Meaning |
 |---|---|
-| "Admin sign-in is not set up yet" (503) | `TEAM_DOMAIN` or `POLICY_AUD` is empty in `wrangler.jsonc`. |
-| "You are not signed in" (401) | The request did not come through Access. Check the Access rule covers both `/admin` and `/api/admin`. |
-| "This email is not allowed" (403) | The email is not in `ADMIN_EMAILS`. |
+| The login page says "That email and password do not match" | Wrong email or password. Emails are not case sensitive. After 8 wrong tries it locks for 15 minutes. |
+| "Too many wrong tries" | Wait 15 minutes. If you cannot remember the password, use `/admin/setup/` (see *Forgot your password?*). |
+| "/admin/setup/ is switched off" | There is no `SETUP_CODE` secret (or it is under 16 characters). Add it as in step 1. |
+| "The admin could not reach its database" | The D1 database is not linked (see Step 1.2 above). |
+| You get the Cloudflare emailed code instead of the login page | The Access application is still switched on for the domain. Delete it (step 4). |
+| `ADMIN_EMAILS` in `wrangler.jsonc` | Only limits who may use **Access**. Password logins are exactly the ones listed under *Logins and password*. |
 | "Photo storage is not connected yet" | The R2 bucket is not linked. See Step 1.2. |
 | "The database is not connected yet" | The D1 database is not linked. See Step 1.2. Until then the shop falls back to the 5 demo pairs. |
 | "Back in a minute" on the shop | The database could not be read. Try again in a moment. |

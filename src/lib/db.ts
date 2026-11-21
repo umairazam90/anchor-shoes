@@ -6,9 +6,10 @@ import { DEFAULT_SETTINGS, brandSlug, makeShop, sizeSlug, type Product, type Set
 import type { PairInput } from "./validate";
 import { summarize, type Review, type ReviewInput } from "./reviews";
 import type { AccessEnv } from "./access";
+import { parseIterations } from "./password";
 import type { D1Database, R2Bucket } from "./cf-types";
 
-type Bindings = AccessEnv & { DB?: D1Database; PHOTOS?: R2Bucket };
+type Bindings = AccessEnv & { DB?: D1Database; PHOTOS?: R2Bucket; SETUP_CODE?: string; PASSWORD_ITERATIONS?: string };
 const bindings = () => env as unknown as Bindings;
 
 export const getDb = () => bindings().DB;
@@ -17,6 +18,11 @@ export const getAccessEnv = (): AccessEnv => {
   const b = bindings();
   return { TEAM_DOMAIN: b.TEAM_DOMAIN, POLICY_AUD: b.POLICY_AUD, ADMIN_EMAILS: b.ADMIN_EMAILS, DEV_ADMIN_EMAIL: b.DEV_ADMIN_EMAIL };
 };
+
+/** the secret that allows creating or resetting an admin login at /admin/setup/ (empty = that page is switched off) */
+export const getSetupCode = () => (bindings().SETUP_CODE ?? "").trim();
+/** how many rounds the password hash uses (PASSWORD_ITERATIONS in the dashboard; empty = the default) */
+export const getPasswordIterations = () => parseIterations(bindings().PASSWORD_ITERATIONS);
 
 /* ---------- schema ---------- */
 // Each entry is one version of the schema. To change the tables later, ADD a new entry; never edit an old one.
@@ -57,6 +63,26 @@ const MIGRATIONS: string[][] = [
       decided_at TEXT
     )`,
     `CREATE INDEX IF NOT EXISTS reviews_status ON reviews (status, id)`,
+  ],
+  [
+    // email + password admin login. Only a salted hash of each password is stored, and only a hash of each session token.
+    `CREATE TABLE IF NOT EXISTS admins (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_login_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS admin_sessions (
+      token_hash TEXT PRIMARY KEY,
+      admin_id INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
+    `CREATE INDEX IF NOT EXISTS admin_sessions_admin ON admin_sessions (admin_id)`,
+    // one row per sign-in attempt, used for the wrong-password limits (scope = hashed address or email, at = unix seconds)
+    `CREATE TABLE IF NOT EXISTS login_fails (scope TEXT NOT NULL, at INTEGER NOT NULL)`,
+    `CREATE INDEX IF NOT EXISTS login_fails_scope ON login_fails (scope, at)`,
   ],
 ];
 
@@ -351,4 +377,112 @@ export async function deleteReview(id: number): Promise<boolean> {
   const keys = rowToReview(row).photos.filter((u) => u.startsWith("/img/reviews/")).map((u) => u.slice("/img/".length));
   if (bucket && keys.length) await bucket.delete(keys);
   return true;
+}
+
+/* ---------- admin logins ---------- */
+export type AdminRow = { id: number; email: string; password_hash: string; created_at: string; last_login_at: string | null };
+export type AdminInfo = { id: number; email: string; createdAt: string; lastLogin: string | null };
+
+const nowSec = () => Math.floor(Date.now() / 1000);
+
+export async function countAdmins(): Promise<number> {
+  const db = await adminDb();
+  const r = await db.prepare("SELECT COUNT(*) AS n FROM admins").first<{ n: number }>();
+  return r?.n ?? 0;
+}
+
+export async function listAdmins(): Promise<AdminInfo[]> {
+  const db = await adminDb();
+  const { results } = await db.prepare("SELECT id, email, created_at, last_login_at FROM admins ORDER BY id").all<AdminRow>();
+  return results.map((r) => ({ id: r.id, email: r.email, createdAt: r.created_at, lastLogin: r.last_login_at }));
+}
+
+export async function findAdmin(email: string): Promise<AdminRow | null> {
+  const db = await adminDb();
+  return db.prepare("SELECT * FROM admins WHERE email = ?").bind(email).first<AdminRow>();
+}
+
+export async function getAdminById(id: number): Promise<AdminRow | null> {
+  const db = await adminDb();
+  return db.prepare("SELECT * FROM admins WHERE id = ?").bind(id).first<AdminRow>();
+}
+
+/** adds an admin; returns its id, or null when that email already has a login */
+export async function createAdmin(email: string, passwordHash: string): Promise<number | null> {
+  const db = await adminDb();
+  const r = await db.prepare("INSERT INTO admins (email, password_hash) VALUES (?1, ?2) ON CONFLICT(email) DO NOTHING").bind(email, passwordHash).run();
+  if (!(r.meta.changes ?? 0)) return null;
+  const row = await findAdmin(email);
+  return row?.id ?? null;
+}
+
+export async function setAdminPassword(id: number, passwordHash: string): Promise<void> {
+  const db = await adminDb();
+  await db.prepare("UPDATE admins SET password_hash = ?1 WHERE id = ?2").bind(passwordHash, id).run();
+}
+
+/** removes an admin and every session of theirs */
+export async function deleteAdmin(id: number): Promise<boolean> {
+  const db = await adminDb();
+  const [, r] = await db.batch([
+    db.prepare("DELETE FROM admin_sessions WHERE admin_id = ?").bind(id),
+    db.prepare("DELETE FROM admins WHERE id = ?").bind(id),
+  ]);
+  return (r.meta.changes ?? 0) > 0;
+}
+
+export async function newSession(adminId: number, tokenHash: string, expiresAt: number): Promise<void> {
+  const db = await adminDb();
+  await db.prepare("INSERT INTO admin_sessions (token_hash, admin_id, expires_at) VALUES (?1, ?2, ?3)").bind(tokenHash, adminId, expiresAt).run();
+}
+
+/** who this (hashed) session token belongs to, or null when it is unknown or expired */
+export async function sessionAdmin(tokenHash: string): Promise<{ id: number; email: string } | null> {
+  const db = await adminDb();
+  return db
+    .prepare("SELECT a.id AS id, a.email AS email FROM admin_sessions s JOIN admins a ON a.id = s.admin_id WHERE s.token_hash = ?1 AND s.expires_at > ?2")
+    .bind(tokenHash, nowSec())
+    .first<{ id: number; email: string }>();
+}
+
+export async function endSession(tokenHash: string): Promise<void> {
+  const db = await adminDb();
+  await db.prepare("DELETE FROM admin_sessions WHERE token_hash = ?").bind(tokenHash).run();
+}
+
+/** signs an admin out everywhere, optionally keeping the session they are using right now */
+export async function endSessionsOf(adminId: number, keepHash = ""): Promise<void> {
+  const db = await adminDb();
+  await db.prepare("DELETE FROM admin_sessions WHERE admin_id = ?1 AND token_hash <> ?2").bind(adminId, keepHash).run();
+}
+
+/** after a successful sign-in: remember the time and tidy up expired sessions */
+export async function touchLogin(adminId: number): Promise<void> {
+  const db = await adminDb();
+  await db.batch([
+    db.prepare("UPDATE admins SET last_login_at = datetime('now') WHERE id = ?").bind(adminId),
+    db.prepare("DELETE FROM admin_sessions WHERE expires_at <= ?").bind(nowSec()),
+  ]);
+}
+
+/** counts one attempt on each scope, tidies old rows, and returns how many attempts each scope has in the last `windowMin` minutes (this one included) */
+export async function chargeAttempt(scopes: string[], windowMin: number): Promise<Record<string, number>> {
+  const db = await adminDb();
+  const now = nowSec();
+  await db.batch([
+    db.prepare("DELETE FROM login_fails WHERE at < ?").bind(now - 86400),
+    ...scopes.map((s) => db.prepare("INSERT INTO login_fails (scope, at) VALUES (?1, ?2)").bind(s, now)),
+  ]);
+  const out: Record<string, number> = {};
+  for (const s of scopes) {
+    const r = await db.prepare("SELECT COUNT(*) AS n FROM login_fails WHERE scope = ?1 AND at > ?2").bind(s, now - windowMin * 60).first<{ n: number }>();
+    out[s] = r?.n ?? 0;
+  }
+  return out;
+}
+
+/** forgives the attempts of these scopes (after a correct password) */
+export async function forgiveAttempts(scopes: string[]): Promise<void> {
+  const db = await adminDb();
+  await db.batch(scopes.map((s) => db.prepare("DELETE FROM login_fails WHERE scope = ?").bind(s)));
 }

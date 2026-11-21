@@ -1,0 +1,142 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import { listAdmins, type AdminInfo } from "../../lib/db";
+
+const me = Astro.locals.admin!;
+let admins: AdminInfo[] = [];
+let problem = "";
+try {
+  admins = await listAdmins();
+} catch (e) {
+  problem = e instanceof Error ? e.message : "The database could not be read.";
+}
+const day = (s: string | null) => (s ? s.slice(0, 10) : "not yet");
+const how = me.via === "access" ? "Cloudflare Access (an emailed code)" : me.via === "dev" ? "the local test sign-in" : "";
+---
+
+<Admin title="Logins and password" active="admins">
+  <div class="adm-title"><h1>Logins and password</h1></div>
+  {problem && <div class="notice"><b>Cannot open this page.</b> {problem}</div>}
+
+  {!problem && (
+    <>
+      {me.via === "password" ? (
+        <form class="adm-form adm-section" data-adm-pw novalidate>
+          <h2>Change my password</h2>
+          <div class="field">
+            <label class="lbl" for="p-cur">Current password</label>
+            <input id="p-cur" name="current" type="password" autocomplete="current-password" maxlength="200" />
+            <p class="err" data-err="current" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="p-new">New password</label>
+            <input id="p-new" name="next" type="password" autocomplete="new-password" maxlength="200" />
+            <p class="help">At least 10 characters. A few words with spaces is easy to remember and hard to guess.</p>
+            <p class="err" data-err="next" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="p-again">New password again</label>
+            <input id="p-again" name="again" type="password" autocomplete="new-password" maxlength="200" />
+            <p class="err" data-err="again" hidden></p>
+          </div>
+          <button class="btn" type="submit" data-go>Change password</button>
+          <p class="help" style="margin-top:8px">Your other phones and computers are signed out when you change it.</p>
+        </form>
+      ) : (
+        <div class="notice"><b>You are signed in through {how}.</b> Add a login with an email and password below. After that you can sign in with just those two.</div>
+      )}
+
+      <div class="adm-section">
+        <h2>Admin logins</h2>
+        {admins.length === 0 && <p class="muted">No password logins yet. Add the first one below.</p>}
+        <ul class="adm-people">
+          {admins.map((a) => (
+            <li data-row={a.id}>
+              <div>
+                <b class="adm-email">{a.email}</b>{a.id === me.id && <span class="tag tag--available" style="margin-left:8px">You</span>}
+                <div class="adm-meta">Last sign-in: {day(a.lastLogin)}</div>
+              </div>
+              {a.id !== me.id && <button class="btn btn--danger" type="button" data-adm-del={a.id} data-email={a.email}>Remove</button>}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <form class="adm-form adm-section" data-adm-add novalidate>
+        <h2>Add an admin</h2>
+        <div class="adm-grid">
+          <div class="field span2">
+            <label class="lbl" for="a-email">Email</label>
+            <input id="a-email" name="email" type="email" inputmode="email" autocomplete="off" autocapitalize="none" spellcheck="false" />
+            <p class="err" data-err="email" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="a-pass">Password</label>
+            <input id="a-pass" name="password" type="password" autocomplete="new-password" maxlength="200" />
+            <p class="err" data-err="password" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="a-again">Password again</label>
+            <input id="a-again" name="again" type="password" autocomplete="new-password" maxlength="200" />
+            <p class="err" data-err="again" hidden></p>
+          </div>
+        </div>
+        <p class="help" style="margin-bottom:12px">Tell the person their password in person or by call, not in a public chat. They can change it here after signing in.</p>
+        <button class="btn" type="submit" data-go>Add admin</button>
+      </form>
+    </>
+  )}
+</Admin>
+
+<script>
+  import { api, toast, showErrors, clearErrorsOnEdit, confirmTap } from "../../scripts/admin";
+
+  const values = (form: HTMLFormElement) => {
+    const body: Record<string, string> = {};
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name) body[el.name] = el.value;
+    return body;
+  };
+
+  // change my password
+  const pw = document.querySelector<HTMLFormElement>("[data-adm-pw]");
+  if (pw) clearErrorsOnEdit(pw);
+  pw?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showErrors(pw, undefined);
+    const go = pw.querySelector<HTMLButtonElement>("[data-go]")!;
+    go.disabled = true;
+    const r = await api("/api/admin/password/", "PUT", values(pw));
+    go.disabled = false;
+    if (r.status === 422 && r.data?.errors) { showErrors(pw, r.data.errors); return toast("Please fix the highlighted fields.", "err"); }
+    if (!r.ok) return toast(r.data?.error ?? "Could not change the password. Please try again.", "err");
+    pw.reset();
+    toast("Password changed. Your other devices were signed out.");
+  });
+
+  // add an admin
+  const add = document.querySelector<HTMLFormElement>("[data-adm-add]");
+  if (add) clearErrorsOnEdit(add);
+  add?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    showErrors(add, undefined);
+    const go = add.querySelector<HTMLButtonElement>("[data-go]")!;
+    go.disabled = true;
+    const r = await api("/api/admin/admins/", "POST", values(add));
+    go.disabled = false;
+    if (r.status === 422 && r.data?.errors) { showErrors(add, r.data.errors); return toast("Please fix the highlighted fields.", "err"); }
+    if (!r.ok) return toast(r.data?.error ?? "Could not add the admin. Please try again.", "err");
+    toast("Admin added.");
+    setTimeout(() => location.reload(), 700);
+  });
+
+  // remove an admin (tap twice)
+  document.querySelectorAll<HTMLButtonElement>("[data-adm-del]").forEach((btn) => {
+    confirmTap(btn, "Tap again to remove", async () => {
+      btn.disabled = true;
+      const r = await api(`/api/admin/admins/${btn.dataset.admDel}/`, "DELETE");
+      if (!r.ok) { btn.disabled = false; return toast(r.data?.error ?? "Could not remove. Please try again.", "err"); }
+      toast(`${btn.dataset.email} can no longer sign in.`);
+      btn.closest("li")?.remove();
+    });
+  });
+</script>

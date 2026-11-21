@@ -6,7 +6,7 @@ import cloudflare from "@astrojs/cloudflare";
 export default defineConfig({
   output: "server",
   adapter: cloudflare({ imageService: "passthrough" }),
-  // No Astro sessions: the cart and saved pairs live in the browser, and admin sign-in is Cloudflare Access.
+  // No Astro sessions: the cart and saved pairs live in the browser, and admin sign-in is the site's own login (D1 sessions) or Cloudflare Access.
   // (Leaving this on makes the adapter add an unused KV store that has to be created on every deploy.)
   session: false,
   trailingSlash: "always",
