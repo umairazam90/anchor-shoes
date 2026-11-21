@@ -1,0 +1,79 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import { getSetupCode } from "../../lib/db";
+
+if (Astro.locals.admin) return Astro.redirect("/admin/admins/", 303);
+// 16+ characters, or the page stays switched off (a short code could be guessed)
+const enabled = getSetupCode().length >= 16;
+---
+
+<Admin title="Set up your login" bare>
+  <div class="adm-login">
+    <h1>Set up your login</h1>
+
+    {!enabled && (
+      <div class="notice">
+        <p><b>This page is switched off.</b></p>
+        <p>To create your admin login, or to set a new password if you forgot yours, add a secret called <b>SETUP_CODE</b> in Cloudflare (at least 16 letters and numbers, only you should know it). Then come back to this page.</p>
+        <p class="adm-small">Steps are in SETUP-ADMIN.md, under “Email and password sign-in”.</p>
+      </div>
+    )}
+
+    {enabled && (
+      <>
+        <p class="muted">Type your email and choose a password. If this email already has a login, its password is replaced and every device is signed out.</p>
+        <form class="adm-form" data-setup novalidate>
+          <div class="field">
+            <label class="lbl" for="s-email">Your email</label>
+            <input id="s-email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+            <p class="err" data-err="email" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-pass">New password</label>
+            <input id="s-pass" name="password" type="password" autocomplete="new-password" maxlength="200" required />
+            <p class="help">At least 10 characters. A few words with spaces is easy to remember and hard to guess.</p>
+            <p class="err" data-err="password" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-again">New password again</label>
+            <input id="s-again" name="again" type="password" autocomplete="new-password" maxlength="200" required />
+            <p class="err" data-err="again" hidden></p>
+          </div>
+          <div class="field">
+            <label class="lbl" for="s-code">Setup code</label>
+            <input id="s-code" name="code" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" required />
+            <p class="help">The SETUP_CODE secret you saved in Cloudflare.</p>
+            <p class="err" data-err="code" hidden></p>
+          </div>
+          <p class="adm-msg adm-msg--err" data-formerr role="alert" hidden></p>
+          <button class="btn btn--block" type="submit" data-go>Save and sign in</button>
+        </form>
+      </>
+    )}
+
+    <p class="adm-small"><a href="/admin/login/">Back to sign in</a></p>
+  </div>
+</Admin>
+
+<script>
+  import { api, showErrors, clearErrorsOnEdit } from "../../scripts/admin";
+
+  const form = document.querySelector<HTMLFormElement>("[data-setup]");
+  if (form) clearErrorsOnEdit(form);
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const body: Record<string, string> = {};
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name) body[el.name] = el.value;
+    const formErr = form.querySelector<HTMLElement>("[data-formerr]")!;
+    formErr.hidden = true;
+    showErrors(form, undefined);
+    const go = form.querySelector<HTMLButtonElement>("[data-go]")!;
+    go.disabled = true;
+    const r = await api("/api/admin/setup/", "POST", body);
+    if (r.ok) { location.assign("/admin/"); return; }
+    go.disabled = false;
+    if (r.status === 422 && r.data?.errors) { showErrors(form, r.data.errors); return; }
+    formErr.textContent = r.data?.error ?? "Could not save. Please try again.";
+    formErr.hidden = false;
+  });
+</script>

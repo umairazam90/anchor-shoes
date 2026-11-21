@@ -7,12 +7,15 @@ import "../styles/global.css";
 import "../styles/admin.css";
 import { pendingReviewCount } from "../lib/db";
 
-interface Props { title: string; active?: "pairs" | "add" | "reviews" | "settings" }
-const { title, active } = Astro.props;
+interface Props { title: string; active?: "pairs" | "add" | "reviews" | "settings" | "admins"; bare?: boolean }
+// bare = the sign-in and setup screens: just the logo, no menu, no footer, no database call
+const { title, active, bare = false } = Astro.props;
 const email = Astro.locals.admin?.email ?? "";
 const via = Astro.locals.admin?.via;
 let waiting = 0; // reviews waiting for approval (shown as a number on the Reviews link)
-try { waiting = await pendingReviewCount(); } catch { /* database not connected: the page itself explains it */ }
+if (!bare) {
+  try { waiting = await pendingReviewCount(); } catch { /* database not connected: the page itself explains it */ }
+}
 ---
 
 <!doctype html>
@@ -26,6 +29,9 @@ try { waiting = await pendingReviewCount(); } catch { /* database not connected:
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   </head>
   <body class="adm">
+    {bare ? (
+      <header class="adm-hdr"><div class="adm-wrap adm-hdr__row"><span class="adm-brand"><img src="/brand/logo-header.svg" alt="Anchor Shoes" /><span>Admin</span></span></div></header>
+    ) : (
     <header class="adm-hdr">
       <div class="adm-wrap adm-hdr__row">
         <a class="adm-brand" href="/admin/"><img src="/brand/logo-header.svg" alt="Anchor Shoes" /><span>Admin</span></a>
@@ -38,10 +44,19 @@ try { waiting = await pendingReviewCount(); } catch { /* database not connected:
         </nav>
       </div>
     </header>
+    )}
     <main class="adm-main"><div class="adm-wrap"><slot /></div></main>
-    <footer class="adm-foot">
-      <div class="adm-wrap">Signed in as {email}{via === "dev" && " (local test sign-in)"}</div>
-    </footer>
+    {!bare && (
+      <footer class="adm-foot">
+        <div class="adm-wrap adm-foot__row">
+          <span>Signed in as {email}{via === "dev" && " (local test sign-in)"}{via === "access" && " (Cloudflare Access)"}</span>
+          <a href="/admin/admins/" aria-current={active === "admins" ? "page" : undefined}>Logins and password</a>
+          {via === "password" && (
+            <form method="post" action="/api/admin/logout/"><button type="submit" class="adm-link">Sign out</button></form>
+          )}
+        </div>
+      </footer>
+    )}
     <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
   </body>
 </html>

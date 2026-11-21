@@ -1,3 +1,7 @@
 # Copy this file to .dev.vars for local testing (npm run dev / npm run preview). .dev.vars is never committed.
 # Signs you in to /admin as this email, but ONLY when the site is opened on localhost.
 DEV_ADMIN_EMAIL=you@example.com
+
+# Email + password sign-in. To try /admin/setup/ locally, set a code of 16 or more characters.
+# (With DEV_ADMIN_EMAIL set, localhost signs you in automatically. Open http://0.0.0.0:4321/admin/ instead to see the real login page.)
+SETUP_CODE=local-setup-code-1234

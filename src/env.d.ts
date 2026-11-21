@@ -5,7 +5,7 @@ declare namespace App {
     /** pairs + settings for this request (set in middleware.ts for every storefront page) */
     shop: import("./lib/shop").Shop;
     /** set only on /admin and /api/admin/* once the sign-in has been checked */
-    admin?: { email: string; via: "access" | "dev" };
+    admin?: { id?: number; email: string; via: "access" | "dev" | "password" };
   }
 }
 
