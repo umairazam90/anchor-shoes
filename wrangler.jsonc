@@ -15,8 +15,8 @@
   // Admin sign-in (Cloudflare Access). Filled in once Access is set up, see SETUP-ADMIN.md.
   // Not secrets: the AUD tag only identifies the Access application.
   "vars": {
-    "TEAM_DOMAIN": "", // https://<your-team>.cloudflareaccess.com
-    "POLICY_AUD": "", // the Access application's AUD tag
+    "TEAM_DOMAIN": "https://shiny-river-aed5.cloudflareaccess.com", // https://<your-team>.cloudflareaccess.com
+    "POLICY_AUD": "0621e0c3d34c1e8b3e2014731024d6504ab4e8ea137e8915407f183c8f4ec6f3", // the Access application's AUD tag
     "ADMIN_EMAILS": "" // optional extra allow-list, comma separated
   }
 }

@@ -71,7 +71,7 @@ Astro 7 (**on-demand rendering**, `@astrojs/cloudflare` 14) + TypeScript on a Cl
 - Make the GitHub repo private.
 - **Domain on Cloudflare** (needed for the admin sign-in path rule), or choose the custom-login fallback.
 - **First production deploy of the admin (2026-11-21):** merged to `main` (88261ec); the production build failed with code 10057 (`PHOTOS` was "inherited" from the live version, which had no such binding, because the bindings in wrangler.jsonc had no ID or name). Fix: wrangler.jsonc now names both explicitly (D1 `database_id` dce04558-b3b1-4b4d-9c07-4362fc88caee, R2 `bucket_name` anchor-shoes-photos). If the next build says the bucket does not exist, create `anchor-shoes-photos` in the dashboard (R2 may need enabling first). Check the build result before relying on the admin.
-- Then give Claude the Access team domain and AUD tag (`TEAM_DOMAIN`, `POLICY_AUD`) to put in wrangler.jsonc.
+- **Access values set (2026-11-21):** `TEAM_DOMAIN` = https://shiny-river-aed5.cloudflareaccess.com and `POLICY_AUD` are in wrangler.jsonc (the team domain was reassembled from a pasted fragment, not verified online). Test in a private window on https://anchorshoes.com/admin/ (domain attach and Access app destinations must cover `/admin` and `/api/admin`). `ADMIN_EMAILS` is still empty (optional extra lock).
 
 ## Commands
 npm run dev | npm run build | npm run preview | npm run check | npm test | npm run deploy
