@@ -16,7 +16,7 @@ Until sign-in is connected, `/admin/` shows "Admin sign-in is not set up yet" an
 
 ## Step 1: first deploy (creates the database and photo storage)
 
-`wrangler.jsonc` asks for a D1 database and an R2 bucket without naming them. On the first deploy Cloudflare creates both and links them (Wrangler's "automatic provisioning").
+`wrangler.jsonc` names the D1 database (by ID) and the R2 bucket (`anchor-shoes-photos`). Bare bindings with no ID or name failed the first production deploy (code 10057, Wrangler tried to inherit the bucket from the live version), so they are explicit now. If the build says the bucket does not exist, create it as in step 2 below.
 
 1. Push the `admin-panel` branch. If your Cloudflare project builds branches as previews, open the preview link and check the shop loads (it will show the 5 demo pairs, exactly like today).
 2. If the build log says it could not create the database or bucket, do it by hand:

@@ -4,11 +4,13 @@
   "compatibility_date": "2026-11-01",
 
   // The Astro adapter fills in the Worker entry and the static assets folder at build time.
-  // These two bindings have no IDs on purpose: Wrangler creates them on the first deploy (automatic
-  // provisioning). If that is ever blocked, create them in the Cloudflare dashboard and paste the IDs
-  // here (see SETUP-ADMIN.md).
-  "d1_databases": [{ "binding": "DB" }], // pairs + settings (tables are created by src/lib/db.ts)
-  "r2_buckets": [{ "binding": "PHOTOS" }], // uploaded photos, served at /img/...
+  // Both bindings are named explicitly. With bare bindings (no ID or name), the first production
+  // deploy failed (2026-11-21, code 10057): Wrangler marked PHOTOS "inherited" from the live version,
+  // which had no such binding. The database ID is the one Cloudflare created for this Worker's DB.
+  "d1_databases": [
+    { "binding": "DB", "database_id": "dce04558-b3b1-4b4d-9c07-4362fc88caee" }, // pairs + settings (tables are created by src/lib/db.ts)
+  ],
+  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "anchor-shoes-photos" }], // uploaded photos, served at /img/...
 
   // Admin sign-in (Cloudflare Access). Filled in once Access is set up, see SETUP-ADMIN.md.
   // Not secrets: the AUD tag only identifies the Access application.
