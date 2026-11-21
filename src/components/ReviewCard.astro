@@ -1,0 +1,18 @@
+---
+import Stars from "./Stars.astro";
+import { reviewDate, type Review } from "../lib/reviews";
+interface Props { r: Review }
+const { r } = Astro.props;
+---
+<li class="rev">
+  <Stars rating={r.rating} />
+  <p class="rev__text">{r.comment}</p>
+  {r.photos.length > 0 && (
+    <ul class="rev__photos">
+      {r.photos.map((u, i) => (
+        <li><a href={u} target="_blank" rel="noopener" aria-label={`Open photo ${i + 1} of this review`}><img src={u} alt="" width="160" height="200" loading="lazy" /></a></li>
+      ))}
+    </ul>
+  )}
+  <p class="rev__by"><b>{r.name}</b>{r.city && <span> · {r.city}</span>}<time>{reviewDate(r.createdAt)}</time></p>
+</li>

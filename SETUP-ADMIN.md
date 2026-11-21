@@ -54,6 +54,7 @@ Dashboard labels move around a little; the idea stays the same.
 - **UK, US and foot length** come from the Nike and adidas charts automatically. Open *More size details* only to override them or add a measured insole length.
 - **Mark as sold** straight from the list. The pair leaves the shop's "for sale" lists at once; its page stays up and says sold.
 - **Settings**: WhatsApp and call numbers, self pickup, delivery charges, cities, return window and wording, announcement bar, social links.
+- **Reviews**: customers send them from the bottom of the home page. They wait under Admin → Reviews (a number on the link shows how many). *Approve and show on shop* publishes one, *Hide from shop* takes it back, *Delete* removes it and its photos. Nothing a customer writes appears on the shop before you approve it.
 - **Demo pairs**: the 5 sample pairs from the first install carry a *Demo* tag. *Delete demo pairs* removes them; real pairs are never touched.
 
 Flaws are required on purpose ("None" is fine). Customers see them, and honest condition is the brand's promise.
@@ -83,4 +84,5 @@ The local database and photos live in `.wrangler/state` (ignored by git). Delete
 
 - A photo uploaded but not saved (you closed the page) stays in storage. Harmless; a clean-up job is part of the launch hardening.
 - Checkout is still the WhatsApp stub: it does not reserve a pair, so two people can still ask for the same pair. Orders in the database, one-pair-one-buyer protection, the TCS tracking number and the phone/email alerts are the next phase.
+- There is no phone or email alert yet when a customer sends a review; check the number on the Reviews link in the admin.
 - One admin screen at a time: if two people edit the same pair at the same moment, the last save wins.

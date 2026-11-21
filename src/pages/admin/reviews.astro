@@ -1,0 +1,89 @@
+---
+import Admin from "../../layouts/Admin.astro";
+import Stars from "../../components/Stars.astro";
+import { listReviews } from "../../lib/db";
+import { reviewDate } from "../../lib/reviews";
+
+let reviews: Awaited<ReturnType<typeof listReviews>> = [];
+let problem = "";
+try {
+  reviews = await listReviews();
+} catch (e) {
+  problem = e instanceof Error ? e.message : "The database could not be read.";
+}
+const waiting = reviews.filter((r) => r.status === "pending");
+const live = reviews.filter((r) => r.status === "approved");
+---
+
+<Admin title="Reviews" active="reviews">
+  <div class="adm-title"><h1>Reviews</h1></div>
+  <p class="muted small" style="margin:-6px 0 14px">Customers send reviews from the bottom of the home page. A review only appears on the shop after you approve it.</p>
+
+  {problem && <div class="notice"><b>Cannot show the reviews.</b> {problem}</div>}
+
+  {!problem && (
+    <>
+      <div class="adm-stats" style="grid-template-columns:repeat(2,1fr)">
+        <div class="adm-stat"><b data-n-pending>{waiting.length}</b><span>Waiting for you</span></div>
+        <div class="adm-stat"><b data-n-live>{live.length}</b><span>On the shop</span></div>
+      </div>
+
+      {reviews.length === 0 && <p class="adm-empty">No reviews yet. When a customer sends one, it will wait here for your approval.</p>}
+
+      {[{ title: "Waiting for approval", list: waiting }, { title: "On the shop", list: live }].map((group) => group.list.length > 0 && (
+        <>
+          <h2 class="adm-sub">{group.title}</h2>
+          <ul class="adm-list">
+            {group.list.map((r) => (
+              <li class="rv" data-row data-id={r.id} data-status={r.status}>
+                <div class="rv__top">
+                  <Stars rating={r.rating} />
+                  <span class="rv__meta">{reviewDate(r.createdAt)}</span>
+                </div>
+                <div><span class="rv__who">{r.name}</span>{r.city && <span class="rv__meta"> · {r.city}</span>}</div>
+                <p class="rv__text">{r.comment}</p>
+                {r.photos.length > 0 && (
+                  <div class="rv__photos">
+                    {r.photos.map((u) => <a href={u} target="_blank" rel="noopener"><img src={u} alt="Photo sent with this review" loading="lazy" /></a>)}
+                  </div>
+                )}
+                <div class="adm-acts">
+                  {r.status === "pending"
+                    ? <button class="btn btn--brass" type="button" data-set="approved">Approve and show on shop</button>
+                    : <button class="btn btn--line" type="button" data-set="pending">Hide from shop</button>}
+                  <button class="btn btn--danger" type="button" data-del>Delete</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      ))}
+    </>
+  )}
+</Admin>
+
+<script>
+  import { api, toast, confirmTap } from "../../scripts/admin";
+
+  for (const row of document.querySelectorAll<HTMLElement>("[data-row]")) {
+    const id = row.dataset.id;
+    const done = (msg: string) => { toast(msg); setTimeout(() => location.reload(), 700); };
+
+    row.querySelector<HTMLButtonElement>("[data-set]")?.addEventListener("click", async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const status = btn.dataset.set;
+      btn.disabled = true;
+      const r = await api(`/api/admin/reviews/${id}/`, "PATCH", { status });
+      btn.disabled = false;
+      if (!r.ok) return toast(r.data?.error ?? "Could not change the review.", "err");
+      done(status === "approved" ? "Approved. It is on the shop now." : "Hidden. It is off the shop now.");
+    });
+
+    const del = row.querySelector<HTMLButtonElement>("[data-del]")!;
+    confirmTap(del, "Tap again to delete", async () => {
+      const r = await api(`/api/admin/reviews/${id}/`, "DELETE");
+      if (!r.ok) return toast(r.data?.error ?? "Could not delete the review.", "err");
+      done("Review deleted.");
+    });
+  }
+</script>

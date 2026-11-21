@@ -4,6 +4,7 @@ import { env } from "cloudflare:workers";
 import seed from "../data/products.json";
 import { DEFAULT_SETTINGS, brandSlug, makeShop, sizeSlug, type Product, type Settings } from "./shop";
 import type { PairInput } from "./validate";
+import { summarize, type Review, type ReviewInput } from "./reviews";
 import type { AccessEnv } from "./access";
 import type { D1Database, R2Bucket } from "./cf-types";
 
@@ -40,6 +41,22 @@ const MIGRATIONS: string[][] = [
       sold_at TEXT
     )`,
     `CREATE INDEX IF NOT EXISTS pairs_status ON pairs (status)`,
+  ],
+  [
+    // customer reviews; a new review is 'pending' until it is approved in the admin. ip_hash only serves the rate limit.
+    `CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      city TEXT NOT NULL DEFAULT '',
+      rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT NOT NULL,
+      photos TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved')),
+      ip_hash TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      decided_at TEXT
+    )`,
+    `CREATE INDEX IF NOT EXISTS reviews_status ON reviews (status, id)`,
   ],
 ];
 
@@ -253,4 +270,85 @@ export async function saveSettings(s: Settings): Promise<void> {
     .prepare("INSERT INTO meta (key, value) VALUES ('settings', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
     .bind(JSON.stringify(s))
     .run();
+}
+
+/* ---------- reviews ---------- */
+type ReviewRow = { id: number; name: string; city: string; rating: number; comment: string; photos: string; status: string; created_at: string };
+
+function rowToReview(r: ReviewRow): Review {
+  let photos: string[] = [];
+  try {
+    const v = JSON.parse(r.photos);
+    if (Array.isArray(v)) photos = v.filter((u) => typeof u === "string");
+  } catch { /* keep no photos */ }
+  return { id: r.id, name: r.name, city: r.city, rating: r.rating, comment: r.comment, photos, status: r.status === "approved" ? "approved" : "pending", createdAt: r.created_at };
+}
+
+/** what the home page shows: the newest approved reviews, plus the count and average over all approved ones */
+export async function approvedReviews(limit = 9): Promise<{ reviews: Review[]; count: number; average: number }> {
+  const db = getDb();
+  if (!db) return { reviews: [], count: 0, average: 0 };
+  await ensureDb(db);
+  const [list, all] = await db.batch([
+    db.prepare("SELECT * FROM reviews WHERE status = 'approved' ORDER BY id DESC LIMIT ?").bind(limit),
+    db.prepare("SELECT rating FROM reviews WHERE status = 'approved'"),
+  ]);
+  return { reviews: (list.results as ReviewRow[]).map(rowToReview), ...summarize(all.results as { rating: number }[]) };
+}
+
+/** admin list: waiting reviews first (oldest first, so none is forgotten), then the published ones (newest first) */
+export async function listReviews(): Promise<Review[]> {
+  const db = await adminDb();
+  const { results } = await db
+    .prepare("SELECT * FROM reviews ORDER BY CASE status WHEN 'pending' THEN 0 ELSE 1 END, CASE status WHEN 'pending' THEN id END ASC, id DESC")
+    .all<ReviewRow>();
+  return results.map(rowToReview);
+}
+
+export async function pendingReviewCount(): Promise<number> {
+  const db = await adminDb();
+  const r = await db.prepare("SELECT COUNT(*) AS n FROM reviews WHERE status = 'pending'").first<{ n: number }>();
+  return r?.n ?? 0;
+}
+
+/** how many reviews this sender made in the last hour and day, and how many reviews wait for approval in total */
+export async function reviewCounts(ipHash: string): Promise<{ hour: number; day: number; pending: number }> {
+  const db = await adminDb();
+  const r = await db
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM reviews WHERE ip_hash = ?1 AND created_at > datetime('now', '-1 hour')) AS hour,
+         (SELECT COUNT(*) FROM reviews WHERE ip_hash = ?1 AND created_at > datetime('now', '-1 day')) AS day,
+         (SELECT COUNT(*) FROM reviews WHERE status = 'pending') AS pending`,
+    )
+    .bind(ipHash)
+    .first<{ hour: number; day: number; pending: number }>();
+  return { hour: r?.hour ?? 0, day: r?.day ?? 0, pending: r?.pending ?? 0 };
+}
+
+export async function addReview(input: ReviewInput, photos: string[], ipHash: string): Promise<void> {
+  const db = await adminDb();
+  await db
+    .prepare("INSERT INTO reviews (name, city, rating, comment, photos, ip_hash) VALUES (?1, ?2, ?3, ?4, ?5, ?6)")
+    .bind(input.name, input.city, input.rating, input.comment, JSON.stringify(photos), ipHash)
+    .run();
+}
+
+/** publish (approved) or take back (pending). The sender's address hash is wiped once a person has looked at the review. */
+export async function setReviewStatus(id: number, status: "approved" | "pending"): Promise<boolean> {
+  const db = await adminDb();
+  const r = await db.prepare("UPDATE reviews SET status = ?1, ip_hash = '', decided_at = datetime('now') WHERE id = ?2").bind(status, id).run();
+  return (r.meta.changes ?? 0) > 0;
+}
+
+/** deletes a review and its photos from storage */
+export async function deleteReview(id: number): Promise<boolean> {
+  const db = await adminDb();
+  const row = await db.prepare("SELECT * FROM reviews WHERE id = ?").bind(id).first<ReviewRow>();
+  if (!row) return false;
+  await db.prepare("DELETE FROM reviews WHERE id = ?").bind(id).run();
+  const bucket = getPhotos();
+  const keys = rowToReview(row).photos.filter((u) => u.startsWith("/img/reviews/")).map((u) => u.slice("/img/".length));
+  if (bucket && keys.length) await bucket.delete(keys);
+  return true;
 }

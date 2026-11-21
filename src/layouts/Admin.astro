@@ -5,11 +5,14 @@ import "@fontsource/poppins/600.css";
 import "@fontsource/poppins/700.css";
 import "../styles/global.css";
 import "../styles/admin.css";
+import { pendingReviewCount } from "../lib/db";
 
-interface Props { title: string; active?: "pairs" | "add" | "settings" }
+interface Props { title: string; active?: "pairs" | "add" | "reviews" | "settings" }
 const { title, active } = Astro.props;
 const email = Astro.locals.admin?.email ?? "";
 const via = Astro.locals.admin?.via;
+let waiting = 0; // reviews waiting for approval (shown as a number on the Reviews link)
+try { waiting = await pendingReviewCount(); } catch { /* database not connected: the page itself explains it */ }
 ---
 
 <!doctype html>
@@ -29,6 +32,7 @@ const via = Astro.locals.admin?.via;
         <nav class="adm-nav" aria-label="Admin">
           <a href="/admin/" aria-current={active === "pairs" ? "page" : undefined}>Pairs</a>
           <a href="/admin/pair/new/" aria-current={active === "add" ? "page" : undefined}>Add pair</a>
+          <a href="/admin/reviews/" aria-current={active === "reviews" ? "page" : undefined}>Reviews{waiting > 0 && <span class="adm-count" aria-label={`${waiting} waiting`}>{waiting}</span>}</a>
           <a href="/admin/settings/" aria-current={active === "settings" ? "page" : undefined}>Settings</a>
           <a href="/" target="_blank" rel="noopener">View shop ↗</a>
         </nav>
