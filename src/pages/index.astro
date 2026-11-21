@@ -107,7 +107,7 @@ const fb = await approvedReviews().catch(() => ({ reviews: [], count: 0, average
       )}
       {fb.reviews.length > 0
         ? <ul class="rev-grid">{fb.reviews.map((r) => <ReviewCard r={r} />)}</ul>
-        : <p class="empty" style="padding-top:0">No reviews yet. Bought a pair from us? Be the first to tell others how it went.</p>}
+        : <p class="empty" style="padding:0 0 4px">No reviews yet. Bought a pair from us? Be the first to tell others how it went.</p>}
 
       <div class="rev-cta" data-rev-cta>
         <button class="btn btn--brass" type="button" aria-expanded="false" aria-controls="rev-form" data-rev-open>Write a review</button>
