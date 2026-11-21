@@ -11,6 +11,7 @@ body.adm { background: var(--cream); }
 .adm-nav a { text-decoration: none; font-weight: 500; font-size: 14px; padding: 9px 12px; border-radius: 6px; min-height: 40px; display: inline-flex; align-items: center; }
 .adm-nav a:hover { background: var(--soft); }
 .adm-nav a[aria-current="page"] { background: var(--navy); color: #fff; }
+.adm-count { margin-left: 6px; background: var(--brass); color: var(--navy); font-size: 12px; font-weight: 700; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; }
 .adm-main { padding: 22px 0 60px; flex: 1; }
 .adm-foot { border-top: 1px solid var(--line); padding: 14px 0 20px; font-size: 13px; color: var(--muted); }
 
@@ -50,6 +51,19 @@ body.adm { background: var(--cream); }
 .adm-acts { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
 .adm-acts .btn { min-height: 42px; padding: 8px 14px; font-size: 13px; flex: 1 1 auto; }
 .adm-empty { text-align: center; padding: 40px 16px; color: var(--muted); background: #fff; border: 1px dashed var(--line); border-radius: 10px; }
+
+/* reviews */
+.rv { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; }
+.rv[data-status="pending"] { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass) inset; }
+.rv__top { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.rv__who { font-weight: 600; overflow-wrap: anywhere; }
+.rv__meta { font-size: 13px; color: var(--muted); }
+.rv__text { white-space: pre-line; overflow-wrap: anywhere; }
+.rv__photos { display: flex; gap: 8px; flex-wrap: wrap; }
+.rv__photos a { width: 84px; height: 105px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: block; }
+.rv__photos img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.rv .adm-acts { grid-column: auto; }
+.adm-sub { font-size: 15px; font-weight: 600; margin: 18px 0 10px; }
 
 /* form */
 .adm-form { display: grid; gap: 0; }

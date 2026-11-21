@@ -2,6 +2,10 @@
 import Base from "../layouts/Base.astro";
 import Icon from "../components/Icon.astro";
 import ProductCard from "../components/ProductCard.astro";
+import ReviewCard from "../components/ReviewCard.astro";
+import Stars from "../components/Stars.astro";
+import { approvedReviews } from "../lib/db";
+import { LIMITS } from "../lib/reviews";
 const { allCategories, allProducts, allBrands, available, productsIn, waLink, settings } = Astro.locals.shop;
 
 const fresh = [...available()].reverse();
@@ -14,6 +18,8 @@ const tiles = allCategories.map((c) => {
 });
 const brands = allBrands();
 const ask = waLink("Hi Anchor Shoes, I am looking for a pair in size ___.");
+// reviews must never break the home page: if they cannot be read, the section simply shows no reviews
+const fb = await approvedReviews().catch(() => ({ reviews: [], count: 0, average: 0 }));
 ---
 
 <Base>
@@ -93,5 +99,70 @@ const ask = waLink("Hi Anchor Shoes, I am looking for a pair in size ___.");
       </div>
       {ask ? <a class="btn" href={ask} rel="noopener">Message us on WhatsApp</a> : <a class="btn" href="/contact/">Contact us</a>}
     </div>
+
+    <section class="section" id="reviews" data-rev>
+      <div class="section__head"><h2>What customers say</h2></div>
+      {fb.count > 0 && (
+        <p class="rev-sum"><Stars rating={fb.average} size={22} /><b>{fb.average.toFixed(1)}</b><span>out of 5 · {fb.count} {fb.count === 1 ? "review" : "reviews"}</span></p>
+      )}
+      {fb.reviews.length > 0
+        ? <ul class="rev-grid">{fb.reviews.map((r) => <ReviewCard r={r} />)}</ul>
+        : <p class="empty" style="padding-top:0">No reviews yet. Bought a pair from us? Be the first to tell others how it went.</p>}
+
+      <div class="rev-cta" data-rev-cta>
+        <button class="btn btn--brass" type="button" aria-expanded="false" aria-controls="rev-form" data-rev-open>Write a review</button>
+        <p class="muted small">We read every review before it appears here.</p>
+      </div>
+
+      <form class="rev-form" id="rev-form" data-rev-form novalidate hidden>
+        <h3>Share your experience</h3>
+        <fieldset data-field="rating">
+          <legend>Your rating</legend>
+          <div class="rate" role="radiogroup" aria-label="Your rating">
+            {[5, 4, 3, 2, 1].map((n) => (
+              <><input type="radio" name="rating" id={`rate-${n}`} value={String(n)} /><label for={`rate-${n}`}><span class="sr-only">{n} {n === 1 ? "star" : "stars"}</span></label></>
+            ))}
+          </div>
+          <span class="rate-note" data-rev-note>Tap a star</span>
+          <p class="err" data-err="rating" hidden></p>
+        </fieldset>
+        <div class="field">
+          <label for="rev-name">Your name</label>
+          <input id="rev-name" name="name" type="text" autocomplete="given-name" maxlength={LIMITS.nameMax} />
+          <p class="err" data-err="name" hidden></p>
+        </div>
+        <div class="field">
+          <label for="rev-city">City <span class="opt">(optional)</span></label>
+          <input id="rev-city" name="city" type="text" autocomplete="address-level2" maxlength={LIMITS.cityMax} />
+          <p class="err" data-err="city" hidden></p>
+        </div>
+        <div class="field">
+          <label for="rev-comment">Your review</label>
+          <textarea id="rev-comment" name="comment" rows="5" maxlength={LIMITS.commentMax} aria-describedby="rev-count"></textarea>
+          <p class="rev-count" id="rev-count"><span data-rev-count>0</span> / {LIMITS.commentMax}</p>
+          <p class="err" data-err="comment" hidden></p>
+        </div>
+        <div class="field">
+          <label>Photos <span class="opt">(optional, up to {LIMITS.photos})</span></label>
+          <ul class="rev-photos" data-rev-previews></ul>
+          <label class="rev-add" data-rev-add><input type="file" accept="image/*" multiple data-rev-file />+ Add photos</label>
+          <p class="help">Photos of the pair you received. Please do not add photos of people.</p>
+          <p class="err" data-err="photos" hidden></p>
+        </div>
+        <div class="rev-hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+        <button class="btn btn--block" type="submit" data-rev-send>Send review</button>
+        <p class="help">Please do not put links or phone numbers in your review.</p>
+        <p class="rev-msg" role="alert" data-rev-msg hidden></p>
+      </form>
+
+      <div class="rev-thanks" role="status" data-rev-thanks hidden>
+        <b>Thank you!</b>
+        <span>Your review has been sent. It will appear here once we have checked it.</span>
+      </div>
+    </section>
   </div>
 </Base>
+
+<script>
+  import "../scripts/reviews";
+</script>

@@ -36,6 +36,7 @@ button { font: inherit; color: inherit; }
 .link { font-size: 14px; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
 .muted { color: var(--muted); }
 .small { font-size: 13px; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .skip { position: absolute; left: -999px; top: 8px; background: var(--navy); color: #fff; padding: 8px 12px; border-radius: 6px; z-index: 100; }
 .skip:focus { left: 8px; }
 .icon { display: block; flex: none; }
@@ -289,6 +290,57 @@ tr:last-child td { border-bottom: 0; }
 .cta-band { background: var(--cream); border-radius: 12px; padding: 26px 20px; display: grid; gap: 14px; justify-items: start; margin: 36px 0 0; }
 .cta-band h2 { font-size: 20px; }
 .cta-band p { color: var(--muted); max-width: 52ch; }
+
+/* customer reviews */
+.stars { --s: 18px; display: inline-block; flex: none; width: calc(var(--s) * 5); height: var(--s); vertical-align: middle;
+  background: linear-gradient(90deg, var(--brass) var(--pct, 0%), #d8d3c4 var(--pct, 0%));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 2,9.3 9.1,8.6'/%3E%3C/svg%3E") 0 0 / var(--s) var(--s) repeat-x;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 2,9.3 9.1,8.6'/%3E%3C/svg%3E") 0 0 / var(--s) var(--s) repeat-x; }
+.rev-sum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: -6px 0 18px; font-size: 14.5px; }
+.rev-sum b { font-size: 20px; }
+.rev-grid { display: grid; gap: 12px; }
+.rev { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.rev__text { white-space: pre-line; overflow-wrap: anywhere; font-size: 14.5px; }
+.rev__photos { display: flex; gap: 8px; flex-wrap: wrap; }
+.rev__photos a { display: block; width: 72px; height: 90px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.rev__photos img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.rev__by { margin-top: auto; font-size: 13.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0 4px; align-items: baseline; }
+.rev__by b { color: var(--navy); font-weight: 600; }
+.rev__by time { margin-left: auto; font-size: 12.5px; }
+.rev-cta { margin-top: 18px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.rev-cta .small { max-width: 44ch; }
+.rev-form { margin-top: 16px; background: var(--cream); border-radius: 12px; padding: 20px 16px; display: grid; gap: 0; max-width: 640px; }
+.rev-form h3 { font-size: 18px; margin-bottom: 14px; }
+.rev-form .help { font-size: 13px; color: var(--muted); margin-top: 5px; }
+.rev-form .err { color: var(--danger); font-size: 13.5px; margin-top: 5px; font-weight: 500; }
+.rev-form [aria-invalid="true"], .rev-form fieldset[aria-invalid="true"] { border-color: var(--danger); }
+.rev-form .opt { font-weight: 400; color: var(--muted); }
+.rev-form fieldset { border: 0; padding: 0; margin: 0 0 14px; min-width: 0; }
+.rev-form legend { font-size: 13.5px; font-weight: 500; padding: 0; margin-bottom: 6px; }
+.rate { display: inline-flex; flex-direction: row-reverse; position: relative; }
+.rate input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; pointer-events: none; }
+.rate label { width: 46px; height: 46px; margin: 0; cursor: pointer; background: #d8d3c4;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 2,9.3 9.1,8.6'/%3E%3C/svg%3E") center / 40px 40px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpolygon points='12,2 14.9,8.6 22,9.3 16.6,14 18.2,21 12,17.3 5.8,21 7.4,14 2,9.3 9.1,8.6'/%3E%3C/svg%3E") center / 40px 40px no-repeat; }
+@media (hover: hover) { .rate label:hover, .rate label:hover ~ label { background: var(--brass-light); } }
+.rate input:checked ~ label { background: var(--brass); } /* after the hover rule on purpose: the chosen stars stay solid brass */
+.rate input:focus-visible + label { outline: 3px solid var(--navy); outline-offset: 1px; border-radius: 6px; }
+.rate-note { display: block; font-size: 13.5px; color: var(--muted); margin-top: 4px; min-height: 1.4em; }
+.rev-photos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.rev-photos li { position: relative; width: 78px; height: 98px; background: #fff; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.rev-photos img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.rev-photos button { position: absolute; right: 2px; top: 2px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(23, 34, 59, 0.88); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+.rev-add { user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbc5b6; border-radius: 8px; background: #fff; min-height: 52px; font-weight: 600; font-size: 14.5px; cursor: pointer; width: 100%; margin: 0; }
+.rev-add:hover { border-color: var(--navy); }
+.rev-add input { display: none; }
+.rev-count { text-align: right; font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.rev-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.rev-msg { margin-top: 12px; font-size: 14.5px; font-weight: 500; }
+.rev-msg[data-kind="err"] { color: var(--danger); }
+.rev-thanks { margin-top: 16px; background: var(--cream); border-radius: 12px; padding: 20px 16px; max-width: 640px; }
+.rev-thanks b { display: block; font-size: 17px; margin-bottom: 4px; }
+@media (min-width: 640px) { .rev-grid { grid-template-columns: repeat(2, 1fr); } .rev-form { padding: 24px; } }
+@media (min-width: 980px) { .rev-grid { grid-template-columns: repeat(3, 1fr); } }
 
 /* footer */
 .ftr { background: var(--navy); color: #fff; margin-top: 56px; padding: 40px 0 22px; }
