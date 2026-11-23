@@ -49,7 +49,7 @@ import Crumbs from "../components/Crumbs.astro";
       const gone = p.status === "sold";
       if (!gone) sub += p.price;
       return `<div class="line ${gone ? "gone" : ""}">
-        <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="76" height="95"></a>
+        <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="64" height="114"></a>
         <div><a href="/shoe/${esc(p.slug)}/"><b>${esc(p.name)}</b></a>
           <span class="m">${esc(p.brand)} · EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span>
           ${gone ? '<span class="m" style="color:var(--danger)">Sold, please remove</span>' : ""}

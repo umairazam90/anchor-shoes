@@ -10,7 +10,7 @@ const { r } = Astro.props;
   {r.photos.length > 0 && (
     <ul class="rev__photos">
       {r.photos.map((u, i) => (
-        <li><a href={u} target="_blank" rel="noopener" aria-label={`Open photo ${i + 1} of this review`}><img src={u} alt="" width="160" height="200" loading="lazy" /></a></li>
+        <li><a href={u} target="_blank" rel="noopener" aria-label={`Open photo ${i + 1} of this review`}><img src={u} alt="" width="72" height="96" loading="lazy" /></a></li>
       ))}
     </ul>
   )}

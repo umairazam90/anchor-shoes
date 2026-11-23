@@ -57,7 +57,7 @@ export function cardHTML(p: Item) {
   const uk = p.uk ?? "-";
   return `<li class="pc" data-card data-slug="${esc(p.slug)}">
     <div class="pc__media">
-      <a class="pc__link" href="${href}" tabindex="-1" aria-hidden="true"><img src="${esc(p.photo)}" alt="" width="640" height="800" loading="lazy" decoding="async"></a>
+      <a class="pc__link" href="${href}" tabindex="-1" aria-hidden="true"><img src="${esc(p.photo)}" alt="" width="576" height="1024" loading="lazy" decoding="async"></a>
       ${sold ? '<span class="badge">Sold</span>' : ""}
       <button class="pc__heart" type="button" data-wish="${esc(p.slug)}" aria-pressed="false" aria-label="Save ${esc(p.name)}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z"/></svg></button>
       ${sold ? "" : `<button class="pc__add" type="button" data-add="${esc(p.slug)}" aria-label="Add ${esc(p.name)} to cart"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>`}
@@ -123,7 +123,7 @@ async function renderDrawer() {
     const gone = p.status === "sold";
     if (!gone) sub += p.price;
     return `<div class="line ${gone ? "gone" : ""}">
-      <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="76" height="95"></a>
+      <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="64" height="114"></a>
       <div><a href="/shoe/${esc(p.slug)}/"><b>${esc(p.name)}</b></a>
         <span class="m">EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span>
         ${gone ? '<span class="m" style="color:var(--danger)">Sold, please remove</span>' : ""}
@@ -140,7 +140,7 @@ async function renderSuggest(q: string) {
   if (q.trim().length < 2) { box.innerHTML = ""; return; }
   const hits = (await catalog()).filter((p) => matches(p, q)).slice(0, 6);
   box.innerHTML = hits.length
-    ? hits.map((p) => `<a class="sugg" href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="56" height="70"><div><b>${esc(p.name)}</b><span>EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span></div><b>${rs(p.price)}</b></a>`).join("")
+    ? hits.map((p) => `<a class="sugg" href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="44" height="78"><div><b>${esc(p.name)}</b><span>EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span></div><b>${rs(p.price)}</b></a>`).join("")
     : `<p class="muted" style="padding:8px 0">No pairs match "${esc(q)}". Try a brand or a size, for example "Nike" or "43".</p>`;
 }
 

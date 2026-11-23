@@ -34,10 +34,10 @@ body.adm { background: var(--cream); }
 .adm-banner .btn { min-height: 40px; padding: 8px 14px; font-size: 13px; }
 
 .adm-list { display: grid; gap: 10px; }
-.adm-row { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: start; }
+.adm-row { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; grid-template-columns: 56px 1fr; gap: 12px; align-items: start; }
 .adm-row[data-status="sold"] { background: #fbfaf7; }
 .adm-row[data-status="sold"] .adm-thumb img { opacity: 0.55; }
-.adm-thumb { width: 64px; height: 80px; background: var(--soft); border-radius: 6px; display: block; overflow: hidden; }
+.adm-thumb { width: 56px; aspect-ratio: 9 / 16; background: var(--soft); border-radius: 6px; display: block; overflow: hidden; }
 .adm-thumb img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .adm-info { min-width: 0; }
 .adm-info a.name { font-weight: 600; text-decoration: none; display: block; overflow-wrap: anywhere; }
@@ -59,9 +59,9 @@ body.adm { background: var(--cream); }
 .rv__who { font-weight: 600; overflow-wrap: anywhere; }
 .rv__meta { font-size: 13px; color: var(--muted); }
 .rv__text { white-space: pre-line; overflow-wrap: anywhere; }
-.rv__photos { display: flex; gap: 8px; flex-wrap: wrap; }
-.rv__photos a { width: 84px; height: 105px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: block; }
-.rv__photos img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.rv__photos { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.rv__photos a { width: 84px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; display: block; line-height: 0; }
+.rv__photos img { display: block; width: 100%; height: auto; }
 .rv .adm-acts { grid-column: auto; }
 .adm-sub { font-size: 15px; font-weight: 600; margin: 18px 0 10px; }
 
@@ -85,7 +85,7 @@ body.adm { background: var(--cream); }
 .btn--danger.is-armed { background: var(--danger); color: #fff; }
 
 .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
-.photo { position: relative; background: var(--soft); border: 1px solid var(--line); border-radius: 8px; aspect-ratio: 4 / 5; overflow: hidden; }
+.photo { position: relative; background: var(--soft); border: 1px solid var(--line); border-radius: 8px; aspect-ratio: 9 / 16; overflow: hidden; }
 .photo img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .photo--busy::after { content: "Uploading…"; position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255, 255, 255, 0.8); font-size: 13px; font-weight: 600; }
 .photo__bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; background: rgba(23, 34, 59, 0.88); }

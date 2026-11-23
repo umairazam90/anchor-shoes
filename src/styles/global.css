@@ -89,8 +89,8 @@ body[data-panel="search"] #panel-search { transform: none; visibility: visible; 
 .searchform { display: flex; gap: 8px; align-items: center; padding: 14px 0; }
 .searchform input { flex: 1; min-width: 0; }
 .suggest { padding-bottom: 18px; display: grid; gap: 4px; }
-.sugg { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center; padding: 8px 0; text-decoration: none; border-top: 1px solid var(--line); }
-.sugg img { width: 56px; height: 70px; object-fit: contain; object-position: center; border-radius: 4px; background: var(--soft); }
+.sugg { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center; padding: 8px 0; text-decoration: none; border-top: 1px solid var(--line); }
+.sugg img { display: block; width: 44px; height: auto; border-radius: 4px; background: var(--soft); }
 .sugg b { display: block; font-size: 14px; font-weight: 600; }
 .sugg span { font-size: 13px; color: var(--muted); }
 
@@ -115,12 +115,13 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 .hero__cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
 .hero .btn--line { color: #fff; border-color: #fff; }
 .hero .btn--line:hover { background: rgba(255, 255, 255, 0.1); }
-/* Photos are never cropped: every photo box uses object-fit: contain and is centred. */
+/* PHOTOS: never cropped, and no bars at the sides. A frame takes the shape of the photo inside it (every <img> carries
+   width/height of a phone portrait, 9:16, so the space is reserved before it loads; a photo of another shape simply
+   makes its own frame that shape). The only fixed-shape boxes are tiny admin thumbnails, which fall back to contain. */
 .mosaic { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px; }
 .mosaic__i { position: relative; background: var(--navy-2); border-radius: 8px; overflow: hidden; }
-.mosaic__i:not(:first-child) { aspect-ratio: 4 / 5; }
 .mosaic__i:first-child { grid-row: 1 / 3; }
-.mosaic__i img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.mosaic__i img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
 
 /* feature row */
 .features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border-bottom: 1px solid var(--line); background: var(--cream); }
@@ -132,23 +133,23 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 /* tiles */
 .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .tile { display: block; border-radius: 8px; overflow: hidden; background: var(--navy); color: #fff; text-decoration: none; }
-.tile__img { display: block; position: relative; aspect-ratio: 4 / 5; background: var(--navy-2); overflow: hidden; }
-.tile__img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; transition: transform 0.4s; }
+.tile__img { display: block; position: relative; background: var(--navy-2); overflow: hidden; }
+.tile__img img { display: block; width: 100%; height: auto; transition: transform 0.4s; }
 .tile:hover .tile__img img { transform: scale(1.03); }
 .tile__txt { display: block; padding: 12px 14px 14px; }
 .tile__txt b { display: block; font-size: 17px; font-weight: 600; }
 .tile__txt span { font-size: 12.5px; color: #dfe3ee; }
-.tile--empty .tile__img { background: repeating-linear-gradient(135deg, var(--navy), var(--navy) 12px, var(--navy-2) 12px, var(--navy-2) 24px); }
+.tile--empty .tile__img { aspect-ratio: 9 / 16; background: repeating-linear-gradient(135deg, var(--navy), var(--navy) 12px, var(--navy-2) 12px, var(--navy-2) 24px); }
 .sizebar { margin: 4px 0 6px; }
 .sizebar__label { display: block; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
 .pills-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 6px 0 -2px; }
 
 /* product cards */
-.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 12px; }
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 12px; align-items: start; }
 .pc { position: relative; }
-.pc__media { position: relative; aspect-ratio: 4 / 5; background: var(--soft); border-radius: 8px; overflow: hidden; }
-.pc__link, .pc__link img { display: block; width: 100%; height: 100%; }
-.pc__link img { object-fit: contain; object-position: center; transition: transform 0.4s; }
+.pc__media { position: relative; background: var(--soft); border-radius: 8px; overflow: hidden; }
+.pc__link, .pc__link img { display: block; width: 100%; }
+.pc__link img { height: auto; transition: transform 0.4s; }
 .pc:hover .pc__link img { transform: scale(1.04); }
 .pc__heart { position: absolute; top: 8px; right: 8px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255, 255, 255, 0.92); border: 0; display: grid; place-items: center; cursor: pointer; color: var(--navy); }
 .pc__heart[aria-pressed="true"] { color: var(--brass-deep); }
@@ -197,12 +198,19 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 
 /* product page */
 .pdp { display: grid; gap: 22px; padding: 8px 0 24px; }
-.gallery__main { aspect-ratio: 4 / 5; background: var(--soft); border-radius: 10px; overflow: hidden; position: relative; }
-.gallery__main img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
-.gallery__thumbs { display: flex; gap: 8px; margin-top: 8px; }
-.gallery__thumbs button { width: 64px; height: 80px; padding: 0; border: 2px solid transparent; border-radius: 6px; overflow: hidden; cursor: pointer; background: var(--soft); }
+/* the frame hugs the photo; a very tall photo is limited to most of the screen height (its width follows), so the whole shoe is always in view */
+.gallery { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.gallery__main { position: relative; width: fit-content; max-width: 100%; background: var(--soft); border-radius: 10px; overflow: hidden; touch-action: pan-y; }
+.gallery__main img { display: block; width: auto; max-width: 100%; height: auto; max-height: 78vh; max-height: min(78svh, 800px); }
+.gallery__nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.92); color: var(--navy); display: grid; place-items: center; cursor: pointer; box-shadow: 0 1px 6px rgba(23, 34, 59, 0.25); }
+.gallery__nav--prev { left: 8px; }
+.gallery__nav--next { right: 8px; }
+.gallery__nav:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.gallery__count { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); background: rgba(23, 34, 59, 0.82); color: #fff; font-size: 12.5px; font-weight: 600; letter-spacing: 0.04em; padding: 3px 11px; border-radius: 999px; pointer-events: none; }
+.gallery__thumbs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 10px; }
+.gallery__thumbs button { width: 64px; padding: 0; border: 2px solid transparent; border-radius: 6px; overflow: hidden; cursor: pointer; background: var(--soft); line-height: 0; }
 .gallery__thumbs button[aria-current="true"] { border-color: var(--navy); }
-.gallery__thumbs img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.gallery__thumbs img { display: block; width: 100%; height: auto; }
 .pdp__brand { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
 .pdp h1 { font-size: 26px; letter-spacing: -0.01em; margin-top: 4px; }
 .pdp__price { font-size: 24px; font-weight: 700; margin: 12px 0 2px; }
@@ -237,8 +245,8 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 
 /* cart + checkout */
 .cart-lines { display: grid; }
-.line { display: grid; grid-template-columns: 76px 1fr auto; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: start; }
-.line img { width: 76px; height: 95px; object-fit: contain; object-position: center; border-radius: 6px; background: var(--soft); }
+.line { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.line img { display: block; width: 64px; height: auto; border-radius: 6px; background: var(--soft); }
 .line a { text-decoration: none; }
 .line b { display: block; font-size: 14.5px; font-weight: 600; }
 .line span.m { display: block; font-size: 13px; color: var(--muted); }
@@ -301,9 +309,9 @@ tr:last-child td { border-bottom: 0; }
 .rev-grid { display: grid; gap: 12px; }
 .rev { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .rev__text { white-space: pre-line; overflow-wrap: anywhere; font-size: 14.5px; }
-.rev__photos { display: flex; gap: 8px; flex-wrap: wrap; }
-.rev__photos a { display: block; width: 72px; height: 90px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.rev__photos img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.rev__photos { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.rev__photos a { display: block; width: 72px; background: var(--soft); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; line-height: 0; }
+.rev__photos img { display: block; width: 100%; height: auto; }
 .rev__by { margin-top: auto; font-size: 13.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 0 4px; align-items: baseline; }
 .rev__by b { color: var(--navy); font-weight: 600; }
 .rev__by time { margin-left: auto; font-size: 12.5px; }
@@ -326,9 +334,9 @@ tr:last-child td { border-bottom: 0; }
 .rate input:checked ~ label { background: var(--brass); } /* after the hover rule on purpose: the chosen stars stay solid brass */
 .rate input:focus-visible + label { outline: 3px solid var(--navy); outline-offset: 1px; border-radius: 6px; }
 .rate-note { display: block; font-size: 13.5px; color: var(--muted); margin-top: 4px; min-height: 1.4em; }
-.rev-photos { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-.rev-photos li { position: relative; width: 78px; height: 98px; background: #fff; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.rev-photos img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.rev-photos { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; margin-bottom: 8px; }
+.rev-photos li { position: relative; width: 78px; background: #fff; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; line-height: 0; }
+.rev-photos img { display: block; width: 100%; height: auto; }
 .rev-photos button { position: absolute; right: 2px; top: 2px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(23, 34, 59, 0.88); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
 .rev-add { user-select: none; -webkit-user-select: none; display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbc5b6; border-radius: 8px; background: #fff; min-height: 52px; font-weight: 600; font-size: 14.5px; cursor: pointer; width: 100%; margin: 0; }
 .rev-add:hover { border-color: var(--navy); }
@@ -363,7 +371,7 @@ tr:last-child td { border-bottom: 0; }
   .tiles { grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .grid { grid-template-columns: repeat(3, 1fr); gap: 28px 18px; }
   .pagehead h1 { font-size: 34px; }
-  .pdp { grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: start; }
+  .pdp { grid-template-columns: 0.9fr 1fr; gap: 48px; align-items: start; }
   .pdp__info { position: sticky; top: calc(var(--hdr) + 16px); }
   .pdp h1 { font-size: 32px; }
   .two { grid-template-columns: 1fr 1fr; }

@@ -10,7 +10,7 @@ const href = `/shoe/${p.slug}/`;
 <li class="pc" data-card data-slug={p.slug} data-eu={p.size.eu} data-brand={p.brand} data-price={p.price} data-cond={p.condition} data-order={idx} data-sold={sold ? "1" : "0"}>
   <div class="pc__media">
     <a class="pc__link" href={href} tabindex="-1" aria-hidden="true">
-      <img src={p.photos[0]} alt="" width="640" height="800" loading="lazy" decoding="async" />
+      <img src={p.photos[0]} alt="" width="576" height="1024" loading="lazy" decoding="async" />
     </a>
     {sold && <span class="badge">Sold</span>}
     <button class="pc__heart" type="button" data-wish={p.slug} aria-pressed="false" aria-label={`Save ${p.name}`}><Icon name="heart" size={20} /></button>

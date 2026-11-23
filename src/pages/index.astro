@@ -36,7 +36,7 @@ const fb = await approvedReviews().catch(() => ({ reviews: [], count: 0, average
       </div>
       {hero.length >= 3 && (
         <div class="mosaic" aria-hidden="true">
-          {hero.map((p) => <div class="mosaic__i"><img src={p.photos[0]} alt="" width="640" height="800" /></div>)}
+          {hero.map((p) => <div class="mosaic__i"><img src={p.photos[0]} alt="" width="576" height="1024" /></div>)}
         </div>
       )}
     </div>
@@ -55,7 +55,7 @@ const fb = await approvedReviews().catch(() => ({ reviews: [], count: 0, average
       <div class="tiles">
         {tiles.map((t) => (
           <a class={`tile ${t.n === 0 && !t.img ? "tile--empty" : ""}`} href={`/size/${t.slug}/`}>
-            <span class="tile__img">{t.img && <img src={t.img} alt="" width="640" height="800" loading="lazy" />}</span>
+            <span class="tile__img">{t.img && <img src={t.img} alt="" width="576" height="1024" loading="lazy" />}</span>
             <span class="tile__txt"><b>{t.label}</b><span>{t.n === 0 ? "None right now" : `${t.n} ${t.n === 1 ? "pair" : "pairs"} · ${t.blurb}`}</span></span>
           </a>
         ))}
@@ -68,7 +68,7 @@ const fb = await approvedReviews().catch(() => ({ reviews: [], count: 0, average
         <div class="tiles">
           {brands.map((b) => (
             <a class="tile" href={`/brand/${b.slug}/`}>
-              <span class="tile__img">{b.photo && <img src={b.photo} alt="" width="640" height="800" loading="lazy" />}</span>
+              <span class="tile__img">{b.photo && <img src={b.photo} alt="" width="576" height="1024" loading="lazy" />}</span>
               <span class="tile__txt"><b>{b.name}</b><span>{b.open === 0 ? "None right now" : `${b.open} ${b.open === 1 ? "pair" : "pairs"}`}</span></span>
             </a>
           ))}

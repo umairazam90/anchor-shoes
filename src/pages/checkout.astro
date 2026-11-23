@@ -75,7 +75,7 @@ const { settings, waDigits } = Astro.locals.shop;
     q("[data-empty]").hidden = lines.length > 0;
     q("[data-full]").hidden = lines.length === 0;
     q("[data-lines]").innerHTML = lines.map((p) => `<div class="line ${p.status === "sold" ? "gone" : ""}">
-      <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="76" height="95"></a>
+      <a href="/shoe/${esc(p.slug)}/"><img src="${esc(p.photo)}" alt="" width="64" height="114"></a>
       <div><b>${esc(p.name)}</b><span class="m">EU ${esc(p.euLabel)} · ${esc(p.condition)}/10</span>
         ${p.status === "sold" ? '<span class="m" style="color:var(--danger)">Sold, remove it from your cart</span>' : ""}</div>
       <span class="pr">${rs(p.price)}</span></div>`).join("");

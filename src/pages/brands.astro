@@ -19,7 +19,7 @@ const brands = allBrands();
         <div class="tiles">
           {brands.map((b) => (
             <a class="tile" href={`/brand/${b.slug}/`}>
-              <span class="tile__img">{b.photo && <img src={b.photo} alt="" width="640" height="800" loading="lazy" />}</span>
+              <span class="tile__img">{b.photo && <img src={b.photo} alt="" width="576" height="1024" loading="lazy" />}</span>
               <span class="tile__txt"><b>{b.name}</b><span>{b.open === 0 ? "None right now" : `${b.open} ${b.open === 1 ? "pair" : "pairs"}`}</span></span>
             </a>
           ))}
